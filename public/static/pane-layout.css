@@ -1,0 +1,132 @@
+/* Component breakpoints follow the available workspace, including the left
+   side of split view (whose browser viewport does not change). */
+:root[data-style="studio"] {
+  .app-main { container: workspace / inline-size; }
+  .main > *, .page-head > *, .form-row > *, .toolbar > * { min-width: 0; }
+  .hero { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .hero-card { container: metric / inline-size; }
+  .hero-value { font-size: clamp(22px, 13cqi, 36px); overflow-wrap: anywhere; white-space: normal; }
+  .hero-profit:has(.hero-pill) .hero-label { padding-right: 0; }
+  .hero-profit.is-loss { background: var(--hero-grad); box-shadow: none; }
+  .hero-profit.is-loss .hero-value { color: #ffb1ba; }
+  .overview-grid { align-items: start; }
+  .overview-trend svg.chart { min-height: 0; margin-top: 24px; }
+  .tile { container: tile / inline-size; }
+  .tile-value { font-size: clamp(20px, 13cqi, 26px); }
+  .tile-extra { display: block; margin-top: 4px; font-size: 12px; }
+  .hint { flex: 0 0 28px; width: 28px; height: 28px; padding: 0; }
+  .topbar { height: auto; min-height: var(--topbar-h); }
+  .table-wrap { min-width: 0; max-width: 100%; }
+  .chart { max-width: 100%; }
+  .split-handle { touch-action: none; }
+  .split-handle:focus-visible { outline: none; }
+  .split-handle:focus-visible::after { background: var(--accent); width: 3px; }
+  .split-bar .icon-btn { min-width: 30px; min-height: 30px; }
+  &.split-dragging .app-main { transition: none; }
+  &.split-dragging :is(.main, .hero-card, .tile, .chart-card) { transition: none !important; }
+
+  @container workspace (max-width: 960px) {
+    .main { padding: 24px; }
+    .topbar { padding: 12px 20px; gap: 8px; }
+    .user-lines, .user-btn .ico-chevron { display: none; }
+    .hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero-card { padding: 22px; min-height: 170px; }
+    .tiles, .tiles[data-tiles-page], .tiles.compact { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+    .wizard, .unit-grid { grid-template-columns: 1fr; }
+    .unit-grid > :last-child { position: static; }
+    .page-head { flex-wrap: wrap; }
+    .overview-grid { grid-template-columns: 1fr; }
+    .flow-legend { grid-template-columns: 1fr; }
+  }
+  @container workspace (max-width: 640px) {
+    .main { padding: 22px 16px 36px; }
+    .topbar { padding: 10px 12px; gap: 6px; }
+    .topbar .period .sub, .topbar .help-link, .topbar .period .ico-chevron { display: none; }
+    .topbar .store-menu { min-width: 0; }
+    .topbar .store-menu .dropdown-btn { max-width: 160px; }
+    .topbar .dropdown-btn { padding: 8px 10px; }
+    .pane-store { max-width: 45%; min-width: 0; }
+    .pane-store .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .page-head { display: block; margin-bottom: 22px; }
+    .page-head .page-actions { margin-top: 16px; }
+    .page-head h1 { font-size: 28px; overflow-wrap: anywhere; }
+    .compare-form { flex-wrap: wrap; justify-content: flex-start; margin-top: 14px; }
+    .compare-dates { flex-wrap: wrap; }
+    .card { padding: 20px 16px; }
+    .hero { gap: 12px; }
+    .hero-card { padding: 20px 16px; }
+    .hero-label { font-size: 12px; }
+    .hero-meta, .hero-note { font-size: 11px; }
+    .highlights { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; mask-image: none; -webkit-mask-image: none; gap: 12px; }
+    .highlights .hl { padding: 16px; }
+    .grid-2, .charts, .unit-answers, .mp-choice { grid-template-columns: 1fr; }
+    .funnel-steps, .order-totals, .stat-row, .partner-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tiles, .tiles[data-tiles-page], .tiles.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tile { padding: 16px; }
+    .tile-title { flex-wrap: wrap; }
+    .flow-legend li { grid-template-columns: 8px minmax(0, 1fr) 34px 90px; gap: 8px; }
+    .signals .signal { white-space: normal; overflow-wrap: anywhere; border-radius: 14px; }
+    .recurring-form { grid-template-columns: minmax(0, 1fr); }
+    .recurring-form > *, .recurring-form input { min-width: 0; max-width: 100%; width: 100%; }
+    .month-nav { flex-wrap: wrap; }
+    .toolbar { flex-wrap: wrap; }
+    .toolbar input[type="search"] { flex: 1 1 100%; width: 100%; max-width: none; }
+    .toolbar .toolbar-end { margin-left: 0; }
+    .page-actions { flex-wrap: wrap; width: auto; }
+    .page-actions .button { white-space: normal; text-align: center; }
+    .form-row input, .form-row select, input[type="file"] { max-width: 100%; }
+    .cost-form { flex-direction: column; align-items: stretch; }
+    .cost-form input { width: 100%; }
+    .columns-grid { grid-template-columns: 1fr; }
+    .columns-form { max-width: 100%; }
+    .products :is(th, td):first-child { min-width: 150px; max-width: 180px; width: 180px; }
+    .pnl :is(th, td):first-child { min-width: 120px; max-width: 160px; width: 160px; white-space: normal; }
+    .one-line, a.one-line { max-width: 180px; }
+    .products .prod-extra { display: none; }
+    .profile-hero { flex-direction: column; align-items: flex-start; }
+    .guide-progress, .sync-facts, .ci-feed li { grid-template-columns: 1fr; }
+    .ci-feed li > .muted { grid-column: 1; }
+    .guide-step { grid-template-columns: auto 1fr; }
+    .partner-link { flex-direction: column; }
+    .pb-op { width: 100%; text-align: center; }
+  }
+  @container workspace (max-width: 480px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-card { min-height: 150px; }
+    .hero-value { font-size: 30px; }
+    .topbar .period .label { display: none; }
+    .topbar .period .dropdown-btn { min-width: 42px; justify-content: center; }
+    .topbar .icon-btn { min-width: 36px; padding: 6px; }
+    .topbar .store-menu .dropdown-btn { max-width: 140px; }
+    .topbar .dropdown { position: static; }
+    .topbar .dropdown-panel, .topbar .period .dropdown-panel, .topbar .user-panel { position: absolute; left: 8px; right: 8px; top: 100%; max-width: none; min-width: 0; margin-top: 4px; }
+    .compare-form select { max-width: 100%; }
+    .flow-legend li { grid-template-columns: 7px minmax(0, 1fr) 44px 82px; gap: 6px; }
+    .flow-total { font-size: 28px; overflow-wrap: anywhere; }
+    .section-title { flex-wrap: wrap; }
+  }
+}
+:root[data-style="studio"][data-mode-now="dark"] .hero-profit.is-loss { background: var(--hero-grad); }
+
+/* Independent navigation inside the second pane, reusing the existing menus. */
+.pane-body .topbar { display: flex; flex-wrap: nowrap; gap: 8px; padding: 10px 16px; }
+.pane-body .topbar-spacer { display: none; }
+.pane-body .topbar .pane-store-menu { flex: 0 1 auto; min-width: 84px; max-width: 220px; }
+.pane-body .topbar .pane-store-menu .dropdown-btn { width: 100%; max-width: none; }
+.pane-body .topbar .pane-section-menu { flex: 0 1 auto; min-width: 84px; max-width: 240px; }
+.pane-body .pane-section-menu .dropdown-btn { width: 100%; justify-content: flex-start; }
+.pane-body .pane-section-menu .ico-chevron,
+.pane-body .pane-store-menu .ico-chevron { margin-left: auto; flex-shrink: 0; }
+.pane-body .pane-store-name { display: grid; min-width: 0; }
+.pane-body .pane-store-name > span { overflow-wrap: anywhere; }
+.pane-body .pane-store-name small { color: var(--muted); font-weight: 400; font-size: 11px; }
+.pane-body .topbar .dropdown { position: static; }
+.pane-body .topbar .dropdown-panel { position: absolute; top: 100%; left: 8px; right: 8px; min-width: 0; max-width: none; max-height: min(480px, calc(100dvh - 180px)); overflow-y: auto; overscroll-behavior: contain; }
+.pane-body .pane-section-menu .dropdown-item > span { white-space: normal; }
+.pane-body .pane-section-menu .dropdown-item .ico { flex-shrink: 0; }
+.pane-body .topbar .period { flex: 0 0 auto; }
+:root[data-style="studio"] .pane-body .topbar .pane-store-menu .dropdown-btn { max-width: none; width: 100%; padding: 8px 12px; border-color: var(--border); }
+.pane-body .topbar .pane-store-menu .ico-chevron { display: block; }
+:root[data-style="studio"] .pane-body .topbar { min-height: 0; gap: 8px; padding: 10px 12px; }
+.pane-body .topbar :is(.pane-store-menu, .pane-section-menu) .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pane-body .topbar .pane-section-menu .dropdown-btn > .ico:first-child { flex-shrink: 0; }

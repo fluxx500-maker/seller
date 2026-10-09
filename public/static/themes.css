@@ -1,0 +1,369 @@
+/* =====================================================================
+   Темы оформления seller.bz. Весь сайт рисуется из токенов style.css — тема задаёт им другие значения.
+   Выбор темы: <html data-style="…"> (cookie ui_style, переключатель в шапке).
+   classic — исходная (без переопределений); fintech, dark, warm, market — по вариантам дизайнера; violet — яркая фиолетовая
+   (исследования/дизайн_главной/вариант_1…4). У светлых тем есть тёмный вариант по настройке системы;
+   «Тёмный кокпит» тёмный всегда.
+   ===================================================================== */
+
+/* ---------- 1. Строгий финтех: глубокий синий, изумрудная прибыль, чёткие линии */
+:root[data-style="fintech"] {
+  --bg: #f6f8fb; --surface: #ffffff; --surface-2: #eef2f7; --zebra: #f9fbfd; --hover: #eef3ff;
+  --text: #0a2540; --muted: #4a5a72; --faint: #5f6f86; --border: #e1e7ef; --border-strong: #c9d3e0;
+  --accent: #1f45d6; --accent-hover: #1736b0; --accent-text: #ffffff; --accent-soft: #ebf0ff; --accent-soft-text: #1736b0;
+  --good: #047857; --good-soft: #e3f6ee; --bad: #b9312a; --bad-soft: #fbeceb;
+  --income-line: #10b981; --expense-line: #d14343;
+  --chart-1: #1f45d6; --chart-2: #0ea371; --chart-3: #d14343; --chart-4: #f59e0b; --chart-5: #0a2540; --chart-grid: #e9eef5;
+  --radius-s: 6px; --radius-m: 10px; --radius: 12px;
+  --shadow-s: 0 1px 2px rgba(10, 37, 64, .06); --shadow-m: 0 12px 32px -8px rgba(10, 37, 64, .18);
+  --ring: 0 0 0 3px rgba(31, 69, 214, .22);
+  --hero-grad: linear-gradient(135deg, #0a2540 0%, #1f45d6 100%); --hero-1: #0a2540; --hero-2: #1f45d6; --hero-glow: rgba(10, 37, 64, .25);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="fintech"] { --bg: #0a0f1c; --surface: #10172a; --surface-2: #162038; --zebra: #121a2e; --hover: #1a2440;
+    --text: #e7edf7; --muted: #9dabc2; --faint: #8796ae; --border: #1f2a44; --border-strong: #2d3a58;
+    --accent: #7d9cff; --accent-hover: #9bb3ff; --accent-text: #08112b; --accent-soft: #18244a; --accent-soft-text: #b9c9ff;
+    --good: #34d399; --good-soft: #0f2a22; --bad: #ff8a80; --bad-soft: #2c1718; --on-bad: #1a0b0c;
+    --chart-1: #7d9cff; --chart-2: #34d399; --chart-3: #ff8a80; --chart-4: #fbbf24; --chart-5: #b9c9ff; --chart-grid: #1c2640;
+    --hero-grad: linear-gradient(135deg, #1f45d6 0%, #0e1830 100%); --hero-1: #1f45d6; --hero-2: #0e1830; --hero-glow: rgba(0, 0, 0, .4); }
+}
+:root[data-mode="dark"][data-style="fintech"] { --bg: #0a0f1c; --surface: #10172a; --surface-2: #162038; --zebra: #121a2e; --hover: #1a2440;
+    --text: #e7edf7; --muted: #9dabc2; --faint: #8796ae; --border: #1f2a44; --border-strong: #2d3a58;
+    --accent: #7d9cff; --accent-hover: #9bb3ff; --accent-text: #08112b; --accent-soft: #18244a; --accent-soft-text: #b9c9ff;
+    --good: #34d399; --good-soft: #0f2a22; --bad: #ff8a80; --bad-soft: #2c1718; --on-bad: #1a0b0c;
+    --chart-1: #7d9cff; --chart-2: #34d399; --chart-3: #ff8a80; --chart-4: #fbbf24; --chart-5: #b9c9ff; --chart-grid: #1c2640;
+    --hero-grad: linear-gradient(135deg, #1f45d6 0%, #0e1830 100%); --hero-1: #1f45d6; --hero-2: #0e1830; --hero-glow: rgba(0, 0, 0, .4); }
+
+/* ---------- 2. Тёмный кокпит: всегда тёмный, фиолетовый акцент, бирюзовые графики, цифры моноширинным */
+:root[data-style="dark"] {
+  color-scheme: dark;
+  --bg: #07080c; --surface: #0e1017; --surface-2: #141723; --zebra: #11131c; --hover: #1a1d2c;
+  --text: #eceef4; --muted: #a0a6b8; --faint: #8b92a8; --border: #1d2130; --border-strong: #2a3044;
+  --accent: #8b7cff; --accent-hover: #a397ff; --accent-text: #07080c; --accent-soft: #1c1a3a; --accent-soft-text: #c9c1ff;
+  --good: #4ade80; --good-soft: #10261a; --bad: #ff6b7a; --bad-soft: #2a1218;
+  --warn: #fbbf24; --warn-soft: #251d0b; --warn-line: #4a3a12;
+  --neutral-line: #5b6273; --income-line: #4ade80; --expense-line: #ff6b7a;
+  --mp-wb: #9136e8; --on-bad: #1a0b0c;
+  --chart-1: #3ee6ff; --chart-2: #4ade80; --chart-3: #ff6b7a; --chart-4: #fbbf24; --chart-5: #8b7cff;
+  --chart-grid: #161b27; --chart-hit: rgba(255, 255, 255, .05);
+  --radius-s: 6px; --radius-m: 10px; --radius: 12px;
+  --shadow-s: 0 0 0 1px rgba(255, 255, 255, .02); --shadow-m: 0 16px 40px -10px rgba(0, 0, 0, .7);
+  --ring: 0 0 0 3px rgba(139, 124, 255, .35);
+  --hero-grad: linear-gradient(135deg, #3b2fd1 0%, #7a3ff2 100%); --hero-1: #3b2fd1; --hero-2: #7a3ff2; --hero-glow: rgba(122, 63, 242, .35);
+}
+:root[data-style="dark"] .tile-value, :root[data-style="dark"] .hero-value, :root[data-style="dark"] td.num,
+:root[data-style="dark"] .big { font-family: var(--mono); letter-spacing: -0.02em; }
+
+/* ---------- 3. Тёплая: терракота, песочный фон, крупные скругления — дружелюбно для продавцов без техподготовки */
+:root[data-style="warm"] {
+  --bg: #fbf5ec; --surface: #ffffff; --surface-2: #f6ecdf; --zebra: #fdf9f3; --hover: #fbeee2;
+  --text: #2d2118; --muted: #6a5a4b; --faint: #736150; --border: #ecdfcd; --border-strong: #dccab2;
+  --accent: #b44a1c; --accent-hover: #963c15; --accent-text: #ffffff; --accent-soft: #fde8dc; --accent-soft-text: #8f3a14;
+  --good: #2b7148; --good-soft: #e2f1e6; --bad: #b8382b; --bad-soft: #fbe7e3;
+  --warn: #8a5a00; --warn-soft: #fdf0cf; --warn-line: #f0d48f;
+  --income-line: #2f7a4f; --expense-line: #c9553f;
+  --chart-1: #e8663d; --chart-2: #2f9e6e; --chart-3: #c9553f; --chart-4: #d4940f; --chart-5: #7a3d8a; --chart-grid: #f1e6d7;
+  --radius-s: 8px; --radius-m: 14px; --radius: 18px;
+  --shadow-s: 0 2px 4px rgba(90, 60, 30, .05); --shadow-m: 0 18px 40px -16px rgba(90, 60, 30, .25);
+  --ring: 0 0 0 3px rgba(180, 74, 28, .2);
+  --hero-grad: linear-gradient(135deg, #963c15 0%, #d8622f 100%); --hero-1: #963c15; --hero-2: #d8622f; --hero-glow: rgba(180, 74, 28, .28);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="warm"] { --bg: #1a1512; --surface: #241d18; --surface-2: #2e251f; --zebra: #28201b; --hover: #33291f;
+    --text: #f5ece2; --muted: #c4b4a4; --faint: #ad9c8b; --border: #3a2f27; --border-strong: #4a3d33;
+    --accent: #f08a5d; --accent-hover: #f5a17b; --accent-text: #1a1512; --accent-soft: #3a2419; --accent-soft-text: #ffc3a6;
+    --good: #7fd19b; --good-soft: #1d3024; --bad: #ff8f80; --bad-soft: #3a1d18; --on-bad: #1a0b0c;
+    --income-line: #7fd19b; --expense-line: #ff8f80;
+    --warn: #f7cd6e; --warn-soft: #3a2e14; --warn-line: #5a4719;
+    --chart-1: #f08a5d; --chart-2: #7fd19b; --chart-3: #ff8f80; --chart-4: #f4b740; --chart-5: #dcaee8; --chart-grid: #332a23;
+    --hero-grad: linear-gradient(135deg, #a8461c 0%, #e0703e 100%); --hero-1: #a8461c; --hero-2: #e0703e; --hero-glow: rgba(0, 0, 0, .4); }
+}
+:root[data-mode="dark"][data-style="warm"] { --bg: #1a1512; --surface: #241d18; --surface-2: #2e251f; --zebra: #28201b; --hover: #33291f;
+    --text: #f5ece2; --muted: #c4b4a4; --faint: #ad9c8b; --border: #3a2f27; --border-strong: #4a3d33;
+    --accent: #f08a5d; --accent-hover: #f5a17b; --accent-text: #1a1512; --accent-soft: #3a2419; --accent-soft-text: #ffc3a6;
+    --good: #7fd19b; --good-soft: #1d3024; --bad: #ff8f80; --bad-soft: #3a1d18; --on-bad: #1a0b0c;
+    --income-line: #7fd19b; --expense-line: #ff8f80;
+    --warn: #f7cd6e; --warn-soft: #3a2e14; --warn-line: #5a4719;
+    --chart-1: #f08a5d; --chart-2: #7fd19b; --chart-3: #ff8f80; --chart-4: #f4b740; --chart-5: #dcaee8; --chart-grid: #332a23;
+    --hero-grad: linear-gradient(135deg, #a8461c 0%, #e0703e 100%); --hero-1: #a8461c; --hero-2: #e0703e; --hero-glow: rgba(0, 0, 0, .4); }
+
+/* ---------- 4. Маркетплейсы: нейтральный фон, чёрные кнопки, цвета Ozon / WB / Яндекс — акцентами */
+:root[data-style="market"] {
+  --bg: #f4f5f8; --surface: #ffffff; --surface-2: #eef0f4; --zebra: #f8f9fb; --hover: #eef0f6;
+  --text: #0f1115; --muted: #555b68; --faint: #636a78; --border: #e4e6ec; --border-strong: #cdd1da;
+  --accent: #0f1115; --accent-hover: #2a2e37; --accent-text: #ffffff; --accent-soft: #eef0f4; --accent-soft-text: #0f1115;
+  --good: #0f7a3d; --good-soft: #e3f5ea; --bad: #c62f2f; --bad-soft: #fcebeb;
+  --mp-ozon: #005bff; --mp-wb: #7b1fd6; --mp-yandex: #ffcc00;
+  --income-line: #0f7a3d; --expense-line: #c62f2f;
+  --chart-1: #005bff; --chart-2: #0f7a3d; --chart-3: #c62f2f; --chart-4: #d4940f; --chart-5: #7b1fd6; --chart-grid: #eceef3;
+  --radius-s: 8px; --radius-m: 12px; --radius: 16px;
+  --shadow-s: 0 1px 2px rgba(15, 17, 21, .06); --shadow-m: 0 14px 34px -12px rgba(15, 17, 21, .2);
+  --ring: 0 0 0 3px rgba(0, 91, 255, .25);
+  --hero-grad: linear-gradient(135deg, #0f1115 0%, #2a2e37 100%); --hero-1: #0f1115; --hero-2: #2a2e37; --hero-glow: rgba(15, 17, 21, .25);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="market"] { --bg: #0c0d11; --surface: #15171d; --surface-2: #1c1f27; --zebra: #181a21; --hover: #20242e;
+    --text: #f2f3f6; --muted: #a8aebb; --faint: #929aa8; --border: #262a34; --border-strong: #353a46;
+    --accent: #ffffff; --accent-hover: #e6e8ee; --accent-text: #0c0d11; --accent-soft: #232732; --accent-soft-text: #ffffff;
+    --good: #4cd07d; --good-soft: #13281c; --bad: #ff7b7b; --bad-soft: #2c1718; --on-bad: #1a0b0c;
+    --income-line: #4cd07d; --expense-line: #ff7b7b;
+    --mp-ozon: #1a64f5; --mp-wb: #9136e8; --mp-yandex: #ffd633;
+    --chart-1: #3d82ff; --chart-2: #4cd07d; --chart-3: #ff7b7b; --chart-4: #ffd633; --chart-5: #a45cff; --chart-grid: #1d2029;
+    --hero-grad: linear-gradient(135deg, #2a2e37 0%, #15171d 100%); --hero-1: #2a2e37; --hero-2: #15171d; --hero-glow: rgba(0, 0, 0, .45); }
+}
+:root[data-mode="dark"][data-style="market"] { --bg: #0c0d11; --surface: #15171d; --surface-2: #1c1f27; --zebra: #181a21; --hover: #20242e;
+    --text: #f2f3f6; --muted: #a8aebb; --faint: #929aa8; --border: #262a34; --border-strong: #353a46;
+    --accent: #ffffff; --accent-hover: #e6e8ee; --accent-text: #0c0d11; --accent-soft: #232732; --accent-soft-text: #ffffff;
+    --good: #4cd07d; --good-soft: #13281c; --bad: #ff7b7b; --bad-soft: #2c1718; --on-bad: #1a0b0c;
+    --income-line: #4cd07d; --expense-line: #ff7b7b;
+    --mp-ozon: #1a64f5; --mp-wb: #9136e8; --mp-yandex: #ffd633;
+    --chart-1: #3d82ff; --chart-2: #4cd07d; --chart-3: #ff7b7b; --chart-4: #ffd633; --chart-5: #a45cff; --chart-grid: #1d2029;
+    --hero-grad: linear-gradient(135deg, #2a2e37 0%, #15171d 100%); --hero-1: #2a2e37; --hero-2: #15171d; --hero-glow: rgba(0, 0, 0, .45); }
+/* у «Маркетплейсов» у каждой площадки своя полоска-метка в меню магазина и на плитках героя */
+:root[data-style="market"] .hero-profit { border: 1px solid transparent; }
+
+/* в тёмном варианте «Маркетплейсов» герой почти цвета карточек — отделяем рамкой */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="market"] .hero-profit:not(.is-loss) { border-color: var(--border-strong); }
+}
+:root[data-mode="dark"][data-style="market"] .hero-profit:not(.is-loss) { border-color: var(--border-strong); }
+
+/* ---------- 5. Яркая фиолетовая: белый фон, серые разделы, фиолетово-малиновый градиент, кнопки-«таблетки», жирные заголовки */
+:root[data-style="violet"] {
+  --bg: #f9fafb; --surface: #ffffff; --surface-2: #f3f4f6; --zebra: #fafafb; --hover: #f4f1ff;
+  --text: #111827; --muted: #4b5563; --faint: #5b6472; --border: #e5e7eb; --border-strong: #d1d5db;
+  --accent: #5b35f0; --accent-hover: #4a26d6; --accent-text: #ffffff; --accent-soft: #efeaff; --accent-soft-text: #4320c4;
+  --good: #15803d; --good-soft: #e5f6ea; --bad: #dc2626; --bad-soft: #fdecec;
+  --income-line: #16a34a; --expense-line: #e0457b;
+  --chart-1: #5b35f0; --chart-2: #16a34a; --chart-3: #e0457b; --chart-4: #f59e0b; --chart-5: #c026d3; --chart-grid: #eef0f3;
+  --radius-s: 8px; --radius-m: 12px; --radius: 18px;
+  --shadow-s: 0 1px 3px rgba(17, 24, 39, .06); --shadow-m: 0 18px 40px -14px rgba(91, 53, 240, .28);
+  --ring: 0 0 0 3px rgba(91, 53, 240, .25);
+  --hero-grad: linear-gradient(135deg, #5b35f0 0%, #b61fd1 100%); --hero-1: #5b35f0; --hero-2: #b61fd1; --hero-glow: rgba(124, 58, 237, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="violet"] { --bg: #0c0a17; --surface: #141122; --surface-2: #1c1830; --zebra: #17142a; --hover: #221c3c;
+    --text: #efedf8; --muted: #aaa4c2; --faint: #958fae; --border: #26213d; --border-strong: #372f57;
+    --accent: #a48bff; --accent-hover: #b9a6ff; --accent-text: #0c0a17; --accent-soft: #241d48; --accent-soft-text: #d3c7ff;
+    --good: #4ade80; --good-soft: #10261a; --bad: #ff7a90; --bad-soft: #2c1520; --on-bad: #1a0b0c;
+    --income-line: #4ade80; --expense-line: #ff7a90;
+    --chart-1: #a48bff; --chart-2: #4ade80; --chart-3: #ff7a90; --chart-4: #fbbf24; --chart-5: #e879f9; --chart-grid: #1f1a33;
+    --shadow-m: 0 18px 40px -14px rgba(0, 0, 0, .6);
+    --hero-grad: linear-gradient(135deg, #5b35f0 0%, #a21caf 100%); --hero-1: #5b35f0; --hero-2: #a21caf; --hero-glow: rgba(124, 58, 237, .4); }
+}
+:root[data-mode="dark"][data-style="violet"] { --bg: #0c0a17; --surface: #141122; --surface-2: #1c1830; --zebra: #17142a; --hover: #221c3c;
+    --text: #efedf8; --muted: #aaa4c2; --faint: #958fae; --border: #26213d; --border-strong: #372f57;
+    --accent: #a48bff; --accent-hover: #b9a6ff; --accent-text: #0c0a17; --accent-soft: #241d48; --accent-soft-text: #d3c7ff;
+    --good: #4ade80; --good-soft: #10261a; --bad: #ff7a90; --bad-soft: #2c1520; --on-bad: #1a0b0c;
+    --income-line: #4ade80; --expense-line: #ff7a90;
+    --chart-1: #a48bff; --chart-2: #4ade80; --chart-3: #ff7a90; --chart-4: #fbbf24; --chart-5: #e879f9; --chart-grid: #1f1a33;
+    --shadow-m: 0 18px 40px -14px rgba(0, 0, 0, .6);
+    --hero-grad: linear-gradient(135deg, #5b35f0 0%, #a21caf 100%); --hero-1: #5b35f0; --hero-2: #a21caf; --hero-glow: rgba(124, 58, 237, .4); }
+/* кнопки и переключатели — полностью круглые, главная кнопка — с мягким свечением */
+:root[data-style="violet"] button:not(.icon-btn):not(.dropdown-item):not(.theme-chip), :root[data-style="violet"] .button { border-radius: 999px; }
+:root[data-style="violet"] .button.primary, :root[data-style="violet"] button.primary { box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent); }
+:root[data-style="violet"] h1, :root[data-style="violet"] h2 { font-weight: 800; letter-spacing: -0.03em; }
+:root[data-style="violet"] .lp-hero {
+  background: radial-gradient(900px 420px at 50% -20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+              radial-gradient(600px 300px at 90% 30%, color-mix(in srgb, var(--chart-5) 10%, transparent), transparent 70%);
+}
+:root[data-style="violet"] .lp-alt { background: var(--bg); }
+:root[data-style="violet"] .lp { background: var(--surface); }
+
+/* ---------- общее для тем: главная карточка прибыли, боковая панель входа и подсветка первого экрана */
+:root[data-style]:not([data-style="classic"]) .auth-side { background: linear-gradient(160deg, var(--hero-1) 0%, var(--hero-2) 100%); }
+:root[data-style]:not([data-style="classic"]) .hero-profit:not(.is-loss) { background: var(--hero-grad);
+  box-shadow: 0 8px 24px var(--hero-glow); }
+:root[data-style="fintech"] .lp-hero, :root[data-style="warm"] .lp-hero, :root[data-style="market"] .lp-hero,
+:root[data-style="dark"] .lp-hero {
+  background: radial-gradient(900px 420px at 85% -10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+              radial-gradient(700px 360px at -10% 10%, color-mix(in srgb, var(--chart-2) 12%, transparent), transparent 70%);
+}
+:root[data-style="dark"] .lp-hero {
+  background: radial-gradient(900px 420px at 85% -10%, rgba(139, 124, 255, .22), transparent 70%),
+              radial-gradient(700px 360px at -10% 10%, rgba(62, 230, 255, .12), transparent 70%);
+}
+
+/* :where — чтобы у особых случаев ниже (строки таблиц, герой, карточка входа) хватало веса перебить общее правило */
+/* ---------- плавное появление блоков на всех страницах (класс js-motion ставит reveal-init.js — во всех темах, раз в день;
+   список блоков — MOTION в app.js). is-in — блок появляется, rv-done — анимация закончилась, блок в обычном состоянии. */
+.js-motion :where(.main > :not(.hero):not(.tiles):not(.grid-2):not(.signals):not(.tiles-bar):not(script), .hero > *, .tiles > *, .grid-2 > *, .signals > *,
+  tbody > tr:nth-child(-n+30), .auth-wrap > *, .help-toc, .help-doc > :not(.help-cards), .help-cards > *, .chart-card, .flow):not(.rv-done) {
+  transition: opacity .7s cubic-bezier(.22, .61, .36, 1) var(--rd, 0ms), transform .7s cubic-bezier(.22, .61, .36, 1) var(--rd, 0ms);
+}
+.js-motion :where(.main > :not(.hero):not(.tiles):not(.grid-2):not(.signals):not(.tiles-bar):not(script), .hero > *, .tiles > *, .grid-2 > *, .signals > *,
+  tbody > tr:nth-child(-n+30), .auth-wrap > *, .help-toc, .help-doc > :not(.help-cards), .help-cards > *, .chart-card, .flow):not(.rv-done):not(.is-in) { opacity: 0; transform: translateY(32px); }
+.js-motion tbody > tr:nth-child(-n+30):not(.rv-done):not(.is-in) { transform: translateX(-18px); }
+.js-motion :is(.hero > *, .auth-wrap > .auth-card):not(.rv-done):not(.is-in) { transform: translateY(36px) scale(.96); }
+
+/* графики: столбики вырастают, сплошные линии прорисовываются, точки проявляются — когда появилась карточка графика */
+.js-motion .chart-card .chart rect:not(.hit) { transform-box: fill-box; transform-origin: bottom; }
+.js-motion .chart-card:not(.rv-done):not(.is-in) .chart rect:not(.hit) { transform: scaleY(0); }
+.js-motion .chart-card:not(.rv-done):not(.is-in) .chart polyline[pathLength] { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.js-motion .chart-card:not(.rv-done):not(.is-in) .chart circle { opacity: 0; }
+.js-motion .chart-card.is-in .chart rect:not(.hit) { transition: transform .7s cubic-bezier(.22, .61, .36, 1) calc(var(--rd, 0ms) + 250ms); }
+.js-motion .chart-card.is-in .chart polyline[pathLength] { stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.2s cubic-bezier(.45, .05, .25, 1) calc(var(--rd, 0ms) + 250ms); }
+.js-motion .chart-card.is-in .chart circle { transition: opacity .4s ease calc(var(--rd, 0ms) + 1100ms); }
+/* полоса «Куда уходят деньги» заполняется слева направо */
+.js-motion .flow:not(.rv-done):not(.is-in) .flow-bar { clip-path: inset(0 100% 0 0); }
+.js-motion .flow.is-in .flow-bar { transition: clip-path 1s cubic-bezier(.22, .61, .36, 1) calc(var(--rd, 0ms) + 200ms); }
+@media print { .js-motion * { opacity: 1 !important; transform: none !important; clip-path: none !important; } }
+
+/* =====================================================================
+   Спокойные темы (28.09.2026): Спокойная, Графит, Бумага — «менее ИИшно»: свой шрифт, иконки Lucide,
+   цвета из шкал Radix Colors, без градиентов, свечений и размытых пятен. Шрифты лежат у нас (static/fonts, лицензия OFL),
+   внешних запросов нет. Спрайт иконок подменяется в app.py (_icon) и app.js (выбор темы).
+   ===================================================================== */
+@font-face { font-family: "Onest"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/onest-cyrillic-wght-normal.woff2) format("woff2-variations"), url(fonts/onest-cyrillic-wght-normal.woff2) format("woff2");
+  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: "Onest"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/onest-latin-ext-wght-normal.woff2) format("woff2-variations"), url(fonts/onest-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: "Onest"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/onest-latin-wght-normal.woff2) format("woff2-variations"), url(fonts/onest-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geologica-cyrillic-wght-normal.woff2) format("woff2-variations"), url(fonts/geologica-cyrillic-wght-normal.woff2) format("woff2");
+  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geologica-latin-ext-wght-normal.woff2) format("woff2-variations"), url(fonts/geologica-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: "Geologica"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/geologica-latin-wght-normal.woff2) format("woff2-variations"), url(fonts/geologica-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: "Golos Text"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/golos-text-cyrillic-wght-normal.woff2) format("woff2-variations"), url(fonts/golos-text-cyrillic-wght-normal.woff2) format("woff2");
+  unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: "Golos Text"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/golos-text-latin-ext-wght-normal.woff2) format("woff2-variations"), url(fonts/golos-text-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: "Golos Text"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url(fonts/golos-text-latin-wght-normal.woff2) format("woff2-variations"), url(fonts/golos-text-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+:root[data-style="calm"] {
+  --font: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --bg: #f9f9fb; --surface: #ffffff; --surface-2: #f0f0f3; --zebra: #fcfcfd; --hover: #f7f9ff;
+  --text: #1c2024; --muted: #60646c; --faint: #686c75; --border: #e8e8ec; --border-strong: #d9d9e0;
+  --accent: #3e63dd; --accent-hover: #3358d4; --accent-text: #ffffff; --accent-soft: #edf2fe; --accent-soft-text: #3a5bc7;
+  --good: #2a7e3b; --good-soft: #e9f6e9; --bad: #ce2c31; --bad-soft: #feebec;
+  --warn: #935c00; --warn-soft: #fefbe9; --warn-line: #f3d673;
+  --neutral-line: #b9bbc6; --income-line: #46a758; --expense-line: #e5484d;
+  --chart-1: #3e63dd; --chart-2: #46a758; --chart-3: #e5484d; --chart-4: #e2a336; --chart-5: #8b8d98; --chart-grid: #f0f0f3;
+  --radius-s: 6px; --radius-m: 8px; --radius: 12px;
+  --shadow-s: none; --shadow-m: 0 12px 32px -12px rgba(28, 32, 36, .18); --ring: 0 0 0 3px rgba(62, 99, 221, .22);
+  --hero-grad: #3e63dd; --hero-1: #3e63dd; --hero-2: #3e63dd; --hero-glow: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="calm"] { --bg: #111113; --surface: #18191b; --surface-2: #212225; --zebra: #1b1c1e; --hover: #1d2030;
+    --text: #edeef0; --muted: #b0b4ba; --faint: #8b8f97; --border: #2e3135; --border-strong: #43484e;
+    --accent: #3e63dd; --accent-hover: #5472e4; --accent-text: #ffffff; --accent-soft: #182449; --accent-soft-text: #9eb1ff;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff9592; --bad-soft: #3b1219; --on-bad: #191111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #5a6169; --income-line: #53b365; --expense-line: #ec5d5e;
+    --chart-1: #5472e4; --chart-2: #53b365; --chart-3: #ec5d5e; --chart-4: #ffc53d; --chart-5: #777b84; --chart-grid: #212225;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .6);
+    --hero-grad: #253974; --hero-1: #253974; --hero-2: #253974; --hero-glow: transparent; }
+}
+:root[data-mode="dark"][data-style="calm"] { --bg: #111113; --surface: #18191b; --surface-2: #212225; --zebra: #1b1c1e; --hover: #1d2030;
+    --text: #edeef0; --muted: #b0b4ba; --faint: #8b8f97; --border: #2e3135; --border-strong: #43484e;
+    --accent: #3e63dd; --accent-hover: #5472e4; --accent-text: #ffffff; --accent-soft: #182449; --accent-soft-text: #9eb1ff;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff9592; --bad-soft: #3b1219; --on-bad: #191111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #5a6169; --income-line: #53b365; --expense-line: #ec5d5e;
+    --chart-1: #5472e4; --chart-2: #53b365; --chart-3: #ec5d5e; --chart-4: #ffc53d; --chart-5: #777b84; --chart-grid: #212225;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .6);
+    --hero-grad: #253974; --hero-1: #253974; --hero-2: #253974; --hero-glow: transparent; }
+
+:root[data-style="graphite"] {
+  --font: "Geologica", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --bg: #fcfcfd; --surface: #ffffff; --surface-2: #f0f0f3; --zebra: #f9f9fb; --hover: #f0f0f3;
+  --text: #1c2024; --muted: #60646c; --faint: #686c75; --border: #e0e1e6; --border-strong: #cdced6;
+  --accent: #1c2024; --accent-hover: #363a3f; --accent-text: #ffffff; --accent-soft: #e8e8ec; --accent-soft-text: #1c2024;
+  --good: #2a7e3b; --good-soft: #e9f6e9; --bad: #ce2c31; --bad-soft: #feebec;
+  --warn: #935c00; --warn-soft: #fefbe9; --warn-line: #f3d673;
+  --neutral-line: #b9bbc6; --income-line: #46a758; --expense-line: #e5484d;
+  --chart-1: #1c2024; --chart-2: #46a758; --chart-3: #e5484d; --chart-4: #ffba18; --chart-5: #0090ff; --chart-grid: #f0f0f3;
+  --radius-s: 4px; --radius-m: 6px; --radius: 8px;
+  --shadow-s: none; --shadow-m: 0 12px 28px -10px rgba(0, 0, 0, .22); --ring: 0 0 0 3px rgba(28, 32, 36, .2);
+  --hero-grad: #1c2024; --hero-1: #1c2024; --hero-2: #1c2024; --hero-glow: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="graphite"] { --bg: #111113; --surface: #18191b; --surface-2: #212225; --zebra: #1b1c1e; --hover: #272a2d;
+    --text: #edeef0; --muted: #b0b4ba; --faint: #8b8f97; --border: #2e3135; --border-strong: #43484e;
+    --accent: #edeef0; --accent-hover: #ffffff; --accent-text: #111113; --accent-soft: #272a2d; --accent-soft-text: #edeef0;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff9592; --bad-soft: #3b1219; --on-bad: #191111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #5a6169; --income-line: #71d083; --expense-line: #ec5d5e;
+    --chart-1: #edeef0; --chart-2: #71d083; --chart-3: #ec5d5e; --chart-4: #ffc53d; --chart-5: #3b9eff; --chart-grid: #212225;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .7);
+    --hero-grad: #212225; --hero-1: #212225; --hero-2: #212225; --hero-glow: transparent; }
+}
+:root[data-mode="dark"][data-style="graphite"] { --bg: #111113; --surface: #18191b; --surface-2: #212225; --zebra: #1b1c1e; --hover: #272a2d;
+    --text: #edeef0; --muted: #b0b4ba; --faint: #8b8f97; --border: #2e3135; --border-strong: #43484e;
+    --accent: #edeef0; --accent-hover: #ffffff; --accent-text: #111113; --accent-soft: #272a2d; --accent-soft-text: #edeef0;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff9592; --bad-soft: #3b1219; --on-bad: #191111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #5a6169; --income-line: #71d083; --expense-line: #ec5d5e;
+    --chart-1: #edeef0; --chart-2: #71d083; --chart-3: #ec5d5e; --chart-4: #ffc53d; --chart-5: #3b9eff; --chart-grid: #212225;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .7);
+    --hero-grad: #212225; --hero-1: #212225; --hero-2: #212225; --hero-glow: transparent; }
+
+:root[data-style="paper"] {
+  --font: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --bg: #f9f9f8; --surface: #fdfdfc; --surface-2: #f1f0ef; --zebra: #faf9f8; --hover: #f3fbf9;
+  --text: #21201c; --muted: #63635e; --faint: #6b6b65; --border: #e9e8e6; --border-strong: #dad9d6;
+  --accent: #008573; --accent-hover: #006b5d; --accent-text: #ffffff; --accent-soft: #e0f8f3; --accent-soft-text: #006b5d;
+  --good: #2a7e3b; --good-soft: #e9f6e9; --bad: #d13415; --bad-soft: #feebe7;
+  --warn: #935c00; --warn-soft: #fefbe9; --warn-line: #f3d673;
+  --neutral-line: #bcbbb5; --income-line: #12a594; --expense-line: #e54d2e;
+  --chart-1: #12a594; --chart-2: #46a758; --chart-3: #e54d2e; --chart-4: #e2a336; --chart-5: #82827c; --chart-grid: #f1f0ef;
+  --radius-s: 6px; --radius-m: 10px; --radius: 14px;
+  --shadow-s: none; --shadow-m: 0 14px 34px -14px rgba(33, 32, 28, .2); --ring: 0 0 0 3px rgba(0, 133, 115, .22);
+  --hero-grad: #0d3d38; --hero-1: #0d3d38; --hero-2: #0d3d38; --hero-glow: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode="light"])[data-style="paper"] { --bg: #111110; --surface: #191918; --surface-2: #222221; --zebra: #1c1c1b; --hover: #112220;
+    --text: #eeeeec; --muted: #b5b3ad; --faint: #8f8d86; --border: #31312e; --border-strong: #494844;
+    --accent: #0bd8b6; --accent-hover: #53ecc8; --accent-text: #0d1514; --accent-soft: #0d2d2a; --accent-soft-text: #adf0dd;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff977d; --bad-soft: #391714; --on-bad: #181111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #62605b; --income-line: #0eb39e; --expense-line: #ec6142;
+    --chart-1: #0eb39e; --chart-2: #53b365; --chart-3: #ec6142; --chart-4: #ffc53d; --chart-5: #7c7b74; --chart-grid: #222221;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .7);
+    --hero-grad: #023b37; --hero-1: #023b37; --hero-2: #023b37; --hero-glow: transparent; }
+}
+:root[data-mode="dark"][data-style="paper"] { --bg: #111110; --surface: #191918; --surface-2: #222221; --zebra: #1c1c1b; --hover: #112220;
+    --text: #eeeeec; --muted: #b5b3ad; --faint: #8f8d86; --border: #31312e; --border-strong: #494844;
+    --accent: #0bd8b6; --accent-hover: #53ecc8; --accent-text: #0d1514; --accent-soft: #0d2d2a; --accent-soft-text: #adf0dd;
+    --good: #71d083; --good-soft: #1b2a1e; --bad: #ff977d; --bad-soft: #391714; --on-bad: #181111;
+    --warn: #ffca16; --warn-soft: #302008; --warn-line: #5c3d05;
+    --neutral-line: #62605b; --income-line: #0eb39e; --expense-line: #ec6142;
+    --chart-1: #0eb39e; --chart-2: #53b365; --chart-3: #ec6142; --chart-4: #ffc53d; --chart-5: #7c7b74; --chart-grid: #222221;
+    --shadow-m: 0 16px 40px -12px rgba(0, 0, 0, .7);
+    --hero-grad: #023b37; --hero-1: #023b37; --hero-2: #023b37; --hero-glow: transparent; }
+
+/* общее для спокойных тем: ровные заливки вместо градиентов, линии вместо теней, сдержанные заголовки */
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) body { font-feature-settings: "tnum" 1; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) h1, :root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) h2 { font-weight: 650; letter-spacing: -0.02em; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .hero-profit { box-shadow: none; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .hero-profit.is-loss { background: #b42a2e; box-shadow: none; }
+@media (prefers-color-scheme: dark) { :root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]):not([data-mode="light"]) .hero-profit.is-loss { background: #611623; } }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"])[data-mode="dark"] .hero-profit.is-loss { background: #611623; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .auth-bg { display: none; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-hero { background: none; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-title { font-weight: 700; letter-spacing: -0.035em; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-grad { background: none; color: var(--accent); -webkit-text-fill-color: currentColor; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-show { box-shadow: none; background: var(--hero-1); }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-show::before { display: none; }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .lp-chat { background: var(--surface-2); }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .ms-bars i { background: var(--chart-2); }
+:root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) .button.primary, :root:is([data-style="calm"], [data-style="graphite"], [data-style="paper"]) button.primary { box-shadow: none; }
+/* Графит: цифры и таблицы строже, акцентные надписи не «кричат» */
+:root[data-style="graphite"] .lp-grad { text-decoration: underline; text-decoration-color: var(--income-line); text-decoration-thickness: .08em; text-underline-offset: .12em; }
+
+/* Графит ночью: карточка прибыли почти цвета остальных — отделяем рамкой */
+@media (prefers-color-scheme: dark) { :root:not([data-mode="light"])[data-style="graphite"] .hero-profit:not(.is-loss) { border: 1px solid var(--border-strong); } }
+:root[data-mode="dark"][data-style="graphite"] .hero-profit:not(.is-loss) { border: 1px solid var(--border-strong); }
