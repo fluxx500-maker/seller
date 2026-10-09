@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Служебная · все клиенты{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Служебная страница сервиса</h1>
+    <p class="subtitle">Видна только администраторам сервиса (ADMIN_EMAILS).</p>
+  </div>
+</div>
+<section class="stat-row">
+  <div class="stat"><span class="muted small">Аккаунтов</span><b>{{ totals.accounts }}</b></div>
+  <div class="stat"><span class="muted small">Магазинов</span><b>{{ totals.stores }}</b></div>
+  <div class="stat"><span class="muted small">Пользователей</span><b>{{ totals.users }}</b></div>
+</section>
+
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if problems %}
+<div class="notice error block">
+  <b>Ошибки загрузки: {{ problems|length }}</b>
+  <ul>{% for a, st in problems %}<li>{{ a.account.name }} → {{ st.store.name }}: {{ st.sync.text }} (подряд {{ st.fails }})</li>{% endfor %}</ul>
+</div>
+{% else %}
+<div class="notice ok">Все магазины загружаются без ошибок.</div>
+{% endif %}
+
+{% for a in accounts %}
+<div class="card">
+  <div class="store-head">
+    <h2>{{ a.account.name }} <span class="muted small" style="font-weight: 400">аккаунт {{ a.account.id }} · с {{ a.account.created_at.strftime('%d.%m.%Y') if a.account.created_at }}</span></h2>
+    <span class="small muted">Telegram привязан: {{ a.telegram }}</span>
+  </div>
+  <p class="small">
+    {% for u in a.users %}{{ u.email }} <span class="muted">({{ roles[u.role] }})</span>{{ ', ' if not loop.last }}{% else %}<span class="muted">пользователей нет</span>{% endfor %}
+  </p>
+  {% if a.stores %}
+  <div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Магазин</th><th>Загрузка</th><th class="num">Заказов</th><th class="num">Дней начислений</th><th class="num">Не разослано</th><th></th></tr></thead>
+    <tbody>
+    {% for st in a.stores %}
+    <tr>
+      <td><span class="mp-badge mp-{{ st.store.marketplace }}">{{ mp_of(st.store).short }}</span> {{ st.store.name }} <span class="muted small">#{{ st.store.id }}{{ '' if st.store.is_active else ' · отключён' }}{{ '' if st.has_key else ' · без ключа' }}</span></td>
+      <td class="small"><span class="sync-state sync-{{ st.sync.state }}">{{ st.sync.text }}</span></td>
+      <td class="num">{{ st.orders }}</td>
+      <td class="num">{{ st.days }}</td>
+      <td class="num">{{ st.unsent }}</td>
+      <td class="num">{% if st.has_key %}
+        <form method="post" action="/admin/stores/{{ st.store.id }}/sync">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="sm">Обновить</button></form>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="muted small">Магазинов пока нет.</p>{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

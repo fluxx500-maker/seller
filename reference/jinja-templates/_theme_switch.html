@@ -1,0 +1,14 @@
+{# Переключатель темы оформления: весь сайт сразу, выбор запоминается (cookie ui_style) #}
+<details class="dropdown theme-menu">
+  <summary class="dropdown-btn theme-btn" aria-label="Тема оформления" title="Тема оформления">{{ icon('palette') }}<span class="theme-label">Тема</span></summary>
+  <div class="dropdown-panel theme-panel">
+    <div class="dropdown-note">Тема оформления</div>
+    {% for code, title, colors in themes %}
+    <button type="button" class="dropdown-item theme-item{{ ' active' if code == ui_style }}" data-theme-choice="{{ code }}" aria-pressed="{{ 'true' if code == ui_style else 'false' }}">
+      <span class="theme-swatch" aria-hidden="true">{% for c in colors %}<i style="background: {{ c }}"></i>{% endfor %}</span>
+      <span class="name">{{ title }}</span>
+      <span class="check">{{ icon('check', 'ico-s') }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</details>

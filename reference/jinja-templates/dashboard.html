@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Сводка · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% set cmp_params = {"compare": "year"} if compare == "year" else ({"compare": "custom", "cmp_from": prev_since.isoformat(), "cmp_to": prev_until.isoformat()} if compare == "custom" else {}) %}{% with action="/", extra_params=cmp_params %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="page-eyebrow">Обзор бизнеса</div>
+    <h1>Сводка магазина</h1>
+    <p class="subtitle">
+      {{ since.strftime('%d.%m') }} – {{ until.strftime('%d.%m.%Y') }}
+      · к {{ prev_since.strftime('%d.%m') }} – {{ prev_until.strftime('%d.%m.%Y') }}
+      {% if updated %}· <span class="fresh-dot fresh-{{ sync.fresh }}" title="Свежесть данных: зелёный — меньше часа, жёлтый — до 6 часов, красный — давно{% if gaps.fresh %}. Последние дни могут дополниться: {{ mp.title }} присылает начисления с задержкой 1–2 дня{% endif %}"></span>обновлено {{ updated.strftime('%d.%m %H:%M') }}{% endif %}
+    </p>
+  </div>
+  <form class="compare-form" method="get" action="/">
+    <input type="hidden" name="date_from" value="{{ since.isoformat() }}">
+    <input type="hidden" name="date_to" value="{{ until.isoformat() }}">
+    <label for="compare">Сравнить</label>
+    <select id="compare" name="compare" data-compare>
+      <option value="prev" {{ 'selected' if compare == 'prev' }}>с прошлым периодом</option>
+      <option value="year" {{ 'selected' if compare == 'year' }}>с тем же периодом год назад</option>
+      <option value="custom" {{ 'selected' if compare == 'custom' }}>со своими датами</option>
+    </select>
+    <span class="compare-dates" {{ '' if compare == 'custom' else 'hidden' }}>
+      <input type="date" name="cmp_from" value="{{ prev_since.isoformat() }}" aria-label="Сравнить с даты">
+      <input type="date" name="cmp_to" value="{{ prev_until.isoformat() }}" aria-label="Сравнить по дату">
+      <button type="submit">OK</button>
+    </span>
+  </form>
+</div>
+
+{% if not coverage[0] %}
+<div class="notice warn">Данные магазина ещё загружаются ({{ sync.text }}). Первая загрузка года занимает несколько минут — обновите страницу чуть позже.</div>
+{% elif sync.state == 'error' %}
+<div class="notice error"><span>Последнее обновление не удалось: {{ sync.text }} <a href="/stores">Подробнее</a></span></div>
+{% endif %}
+{% if coverage[0] and since.isoformat() < coverage[0] %}
+<div class="notice warn">Начисления {{ mp.title }} загружены только с {{ coverage[0] }} — за более ранние дни данных нет.</div>
+{% elif coverage[0] and gaps.missing and gaps.tail_only and mp.fin_lag_note %}
+<div class="notice"><span>Начисления есть по {{ gaps.last.strftime('%d.%m') }} включительно. {{ mp.fin_lag_note }}</span></div>
+{% elif coverage[0] and gaps.missing %}
+<div class="notice warn"><span>Начисления загружены за {{ gaps.loaded }} из {{ gaps.days }} дн. Нет данных за
+  {% for d in gaps.missing[:6] %}{{ d.strftime('%d.%m') }}{{ ", " if not loop.last }}{% endfor %}{{ " и ещё " ~ (gaps.missing|length - 6) ~ " дн." if gaps.missing|length > 6 }}
+  — догружаем, итоги периода пока неполные.</span></div>
+{% endif %}
+{% if not stocks_ok %}
+<div class="notice warn">Остатки сейчас недоступны: {{ mp.title }} не ответил. Остальные показатели актуальны.</div>
+{% endif %}
+
+{% if signals %}
+<div class="signals">
+  {% for x in signals %}<a class="signal signal-{{ x.level }}" href="{{ x.href }}">{{ x.text }} ›</a>{% endfor %}
+</div>
+{% endif %}
+
+{% if coverage[0] %}
+{% if period_empty %}
+<div class="card"><div class="empty">{{ icon('chart') }}<b>За {{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} продаж и начислений нет</b>
+  <p>{% if coverage[1] %}Начисления {{ mp.title }} есть по {{ coverage[1][8:10] }}.{{ coverage[1][5:7] }}.{{ coverage[1][:4] }}. {% endif %}
+    <a href="/?preset=365">Показать последние 365 дней</a></p></div></div>
+{% endif %}
+<section class="hero"{% if period_empty %} hidden{% endif %}>
+  {% if hero.profit %}{% set t = hero.profit %}
+  <article class="hero-card hero-profit{{ ' is-loss' if (t.value or 0) < 0 }}">
+    <div class="hero-label">Чистая прибыль</div>
+    {% if t.get('delta') %}<span class="hero-pill {{ t.trend or '' }}" title="к прошлому периоду">{{ '↑' if t.delta > 0 else '↓' }} {{ t|delta }}</span>{% endif %}
+    <div class="hero-value">{{ t.value|num('rub') }}</div>
+    <div class="hero-meta">
+      {% if current.margin is not none %}маржа {{ current.margin|num('pct') }}{% endif %}
+      {% if not t.get('delta') and t.get('compare_note') %} · {{ t.compare_note }}{% endif %}
+    </div>
+    {% set pdelta = t.get('delta') %}
+    {% if (pdelta is not none and pdelta < -0.3) or (current.margin is not none and current.margin < 0.05) %}
+    <div class="hero-note"><a href="/pnl">Почему {{ 'упала прибыль' if pdelta is not none and pdelta < -0.3 else 'низкая маржа' }}? Разбор по статьям →</a>
+      {% if current.loss_count %} · <a href="/products?f=loss">в минусе {{ current.loss_count }} тов.</a>{% endif %}</div>
+    {% endif %}
+    {% if current.missing_costs %}<div class="hero-note">без себестоимости {{ current.missing_costs|length }} тов. — <a href="/costs">ввести</a></div>{% endif %}
+  </article>
+  {% endif %}
+  {% if hero.orders %}{% set t = hero.orders %}
+  <article class="hero-card">
+    <div class="hero-label">Заказано</div>
+    <div class="hero-value">{{ '≈ ' if t.approx }}{{ t.value|num('rub') }}</div>
+    <div class="hero-meta">{{ current.orders_units|num('units') }}{% if current.orders_cancelled %} · отменено {{ current.orders_cancelled }}{% endif %}{% if current.buyout is not none %} · выкуп {{ current.buyout|num('pct0') }}{% endif %}
+      {% if t.delta %} · <span class="{{ t.trend or '' }}">{{ '↑' if t.delta > 0 else '↓' }} {{ t|delta }}</span>{% endif %}</div>
+  </article>
+  {% endif %}
+  {% if balance %}
+  <a class="hero-card hero-link" href="/money">
+    <div class="hero-label">На балансе у {{ mp.title }}</div>
+    <div class="hero-value">{{ balance.amount|num('rub') }}</div>
+    <div class="hero-meta">придёт следующими выплатами · подробнее →</div>
+  </a>
+  {% endif %}
+  {% if transit.orders %}
+  <article class="hero-card">
+    <div class="hero-label">Едет к покупателям</div>
+    <div class="hero-value">≈ {{ transit.amount|num('rub') }}</div>
+    <div class="hero-meta">{{ transit.orders }} заказ.{% if transit.expected is not none %} · выкупят ≈ {{ transit.expected|num('rub') }} (выкуп {{ transit.buyout|num('pct0') }} за {{ 120 }} дн.){% endif %}</div>
+  </article>
+  {% endif %}
+</section>
+
+<div class="overview-grid">
+  <section class="overview-trend">
+    {% with title="Динамика прибыли", series=profit_series, svg=profit_svg %}{% include "_chart.html" %}{% endwith %}
+    <a class="overview-detail" href="/charts?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">Все графики ↗</a>
+  </section>
+{% if flow.parts %}
+<section class="card flow">
+  <div class="flow-head"><h2>Структура реализации</h2><span class="muted small">Куда уходят деньги</span></div>
+  <div class="flow-total">{{ flow.base|num('rub') }}</div>
+  <div class="flow-bar" role="img" aria-label="Структура реализации">
+    {% for p in flow.parts if p.share > 0 %}<span class="flow-seg flow-{{ p.cls }}" style="width: {{ '%.2f'|format(p.share * 100) }}%" title="{{ p.title }}: {{ p.value|num('rub') }} ({{ p.share|num('pct0') }})"></span>{% endfor %}
+  </div>
+  <ul class="flow-legend">
+    {% for p in flow.parts %}<li><span class="flow-dot flow-{{ p.cls }}"></span><span class="flow-name">{{ p.title }}</span> <b>{{ p.share|num('pct0') }}</b> <span class="flow-amount">{{ p.value|num('rub') }}</span></li>{% endfor %}
+  </ul>
+  {% if drr_level %}<p class="small" style="margin: 8px 0 0">ДРР {{ current.ads_share|num('pct') }} — <span class="drr-{{ drr_level }}">{{ {'good': 'реклама в норме', 'warn': 'стоит присмотреться', 'bad': 'реклама съедает прибыль'}[drr_level] }}</span>{% if current.margin is not none %}, маржа {{ current.margin|num('pct0') }}{% endif %}.</p>{% endif %}
+</section>
+{% endif %}
+</div>
+
+{% if highlights %}
+<section class="highlights">
+  {% for h in highlights %}
+  <a class="hl hl-{{ h.kind }}" href="/product?offer={{ h.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">
+    <span class="hl-title">{{ h.title }}</span>
+    <span class="hl-value">{{ h.value|num(h.fmt) }}{% if h.note %} <span class="muted small">{{ h.note }}</span>{% endif %}</span>
+    <span class="hl-name">{{ h.name }}</span>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}
+{% endif %}
+
+<div class="section-title metrics-head" id="metrics"><h2>Все показатели</h2>
+  <span class="muted small">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }}</span></div>
+{# выбор периода — только в шапке (кнопки у «Всех показателей» убраны 24.09.2026: дублировали шапку) #}
+{% if cmp_days %}<p class="muted small">Изменения «к прошлому периоду» — по первым {{ cmp_days|plural('дню', 'дням', 'дням') }} периода: за последние дни площадка ещё присылает начисления, иначе сравнение показало бы ложное падение.</p>{% endif %}
+{% if not prev_gaps.complete %}<p class="muted small">Сравнение неполное: в прошлом периоде ({{ prev_since.strftime('%d.%m.%Y') }} – {{ prev_until.strftime('%d.%m.%Y') }}) загружены не все дни, поэтому изменения не показываем.</p>{% endif %}
+<section class="tiles" data-tiles-page="dashboard" data-csrf="{{ csrf }}"{% if not ctx.can_edit %} data-readonly{% endif %}{% if period_empty %} hidden{% endif %}>
+  {% for t in tiles %}
+  {% set in_hero = (t.key == 'profit' and hero.profit) or (t.key == 'orders_amount' and hero.orders) %}
+  {% set zero_now = not t.value and t.key not in ('stock_units', 'cap_cost', 'cap_price', 'turnover', 'buyout', 'roi', 'orders_coinvest') %}
+  {% set same_as_paid = t.key == 'tax_base' and current.tax.tax_base == 'paid' %}
+  {# цвет плитки — помогает ли изменение к прошлому периоду прибыли (trend считает metrics.tiles; нейтральные — без цвета) #}
+  <article class="tile {{ t.kind }}{{ ' trend-' ~ t.trend if t.trend }}{{ ' is-hidden' if t.hidden }}{{ ' is-empty' if t.auto_hidden or in_hero or same_as_paid }}{{ ' is-zero' if zero_now }}" data-key="{{ t.key }}">
+    <div class="tile-title">{{ t.title }} <button type="button" class="hint" data-hint="{{ t.hint }}" aria-label="Что такое «{{ t.title }}»">?</button></div>
+    <div class="tile-value{{ ' neg' if t.bad_value }}">
+      {{ '≈ ' if t.approx }}{{ t.value|num(t.fmt) }}{% if t.extra is defined and t.extra_fmt == 'orders' %}{% if t.value is not none %}<span class="tile-extra"> ({{ t.extra|num('orders') }})</span>{% endif %}{% elif t.extra is defined and t.extra is not none %}<span class="tile-extra"> · {{ t.extra_label ~ ' ' if t.extra_label }}{{ t.extra|num(t.extra_fmt) }}</span>{% endif %}
+    </div>
+    {% if t.prev is defined %}
+    <div class="tile-compare">
+      <span>было {{ t.prev|num(t.fmt) }}</span>
+      {% if t.delta and (t.delta|abs) >= 0.0005 %}<span class="{{ t.trend or '' }}">{{ 'доля ' if t.delta_kind == 'pp' }}{{ '↑' if t.delta > 0 else '↓' }} {{ t|delta }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if t.auto_hidden %}<div class="tile-auto-note">пусто в обоих периодах — скрыта автоматически</div>{% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+{% if penalties %}
+<section class="card" style="margin-top: 16px">
+  <h2>Штрафы за период — за что</h2>
+  <ul class="plain-list small">{% for x in penalties %}<li>{{ x.title }} — <b>{{ x.amount|num('rub') }}</b></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% if not coverage[0] %}<div style="margin-top: 16px">
+  {% with title="Прибыль " ~ group_word, series=profit_series, svg=profit_svg %}{% include "_chart.html" %}{% endwith %}
+</div>{% endif %}
+<div class="page-actions">
+  <a class="button" href="/charts?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('chart', 'ico-s') }}Все графики</a>
+  <a class="button" href="/products?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('box', 'ico-s') }}Таблица по товарам</a>
+</div>
+
+<details class="explain">
+  <summary>Как считаются цифры</summary>
+  <p>Продажи, возвраты, комиссия и услуги — по начислениям {{ mp.title }} (в день доставки покупателю), заказы и выкуп — по дате заказа.
+  Налоги: ставка {{ current.tax.usn_rate|num('plain') }} % и НДС {{ current.tax.vat_rate|num('plain') }} % — <a href="/settings">изменить</a>.
+  Подробно о каждой цифре — в <a href="/help/metrics">справке</a>.</p>
+</details>
+{% endblock %}

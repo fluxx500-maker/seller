@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Юнит-экономика · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Юнит-экономика: «что если»</h1>
+    <p class="subtitle">Прибыль с одной проданной штуки. Сначала подставлены фактические цифры товара —
+      поменяйте любое поле и нажмите «Пересчитать». В кабинете {{ mp.title }} ничего не меняется.</p>
+  </div>
+</div>
+
+{% if not offers %}
+<div class="card"><div class="empty">{{ icon('calc') }}<b>Пока нет продаж за последние 30 дней</b><p>Считать не из чего: калькулятор берёт фактические комиссию, логистику и цену товара из продаж.</p></div></div>
+{% else %}
+<form method="get" action="/unit" class="unit-grid">
+  <section class="card">
+    <label for="offer">Товар</label>
+    <select id="offer" name="offer" onchange="window.location='/unit?offer=' + encodeURIComponent(this.value)">
+      {% for o, name in offers %}<option value="{{ o }}" {{ 'selected' if o == offer }}>{{ name }} · {{ o }}</option>{% endfor %}
+    </select>
+    <p class="muted small unit-note">В списке — товары с продажами за 30 дней. Факт: комиссия, логистика и прочие услуги — средние за 90 дней, цена и реклама — за 30 дней, процент выкупа — за 120 дней.</p>
+    {% for f in fields %}
+    <div class="unit-field">
+      <label for="f-{{ f.name }}">{{ f.label }}</label>
+      {# рубли — целыми, проценты — с одним знаком, через запятую (поле принимает и запятую, и точку) #}
+      <input id="f-{{ f.name }}" name="{{ f.name }}" inputmode="decimal" value="{{ ('%.1f'|format(f.value))|replace('.0', '')|replace('.', ',') if f.pct else '%.0f'|format(f.value) }}">
+      {% if (f.value - f.default)|abs > (0.05 if f.pct else 0.5) %}<span class="muted small">факт: {{ f.default|num('plain') if f.pct else f.default|num('rub') }}{{ ' %' if f.pct }}</span>{% endif %}
+    </div>
+    {% endfor %}
+    <p class="muted small" style="margin-top: 12px">Налоги — по настройкам магазина: ставка {{ base.tax.usn_rate|num('plain') }} %, НДС {{ base.tax.vat_rate|num('plain') }} %,
+      база — {{ 'оплата покупателя' if base.tax.tax_base == 'paid' else 'реализация' }} (<a href="/settings">изменить</a>).
+      {% if not base.price_from_orders %}Цена — средняя по продажам: заказов за 30 дней не было.{% endif %}</p>
+    <h2 style="margin-top: 18px">Цели</h2>
+    <div class="unit-field"><label for="t-margin">Желаемая маржа, %</label><input id="t-margin" name="margin" inputmode="decimal" value="{{ targets.margin|num('plain') }}"></div>
+    <div class="unit-field"><label for="t-roi">Желаемый ROI, %</label><input id="t-roi" name="roi" inputmode="decimal" value="{{ targets.roi|num('plain') }}"></div>
+    <div class="unit-field"><label for="t-goal">Цель по прибыли, ₽</label><input id="t-goal" name="goal" inputmode="decimal" value="{{ targets.goal|num('plain') }}"></div>
+    <div class="form-actions">
+      <button class="primary" type="submit">Пересчитать</button>
+      <a class="button" href="/unit?offer={{ offer|urlencode }}">Вернуть факт</a>
+    </div>
+  </section>
+
+  <section class="card unit-result">
+    <div class="hero-card hero-profit{{ ' is-loss' if result.profit < 0 }}">
+      <div class="hero-label">Прибыль с 1 шт.</div>
+      <div class="hero-value">{{ result.profit|num('rub') }}</div>
+      <div class="hero-meta">{% if result.margin is not none %}маржа {{ result.margin|num('pct') }}{% endif %}{% if result.roi is not none %} · ROI {{ result.roi|num('pct0') }}{% endif %}</div>
+    </div>
+    <table class="unit-table">
+      <tr><td>Цена продавца</td><td class="num">{{ fields[0].value|num('rub') }}</td></tr>
+      <tr class="muted"><td>из них платит покупатель</td><td class="num">{{ result.buyer|num('rub') }}</td></tr>
+      <tr><td>Комиссия</td><td class="num">{{ '−' if result.commission >= 0.5 }}{{ result.commission|num('rub') }}</td></tr>
+      <tr><td>Логистика с учётом невыкупа</td><td class="num">{{ '−' if result.logistics >= 0.5 }}{{ result.logistics|num('rub') }}</td></tr>
+      <tr><td>Прочие услуги площадки</td><td class="num">{{ '−' if result.services >= 0.5 }}{{ result.services|num('rub') }}</td></tr>
+      <tr><td>Реклама</td><td class="num">{{ '−' if result.ads >= 0.5 }}{{ result.ads|num('rub') }}</td></tr>
+      <tr><td>Себестоимость</td><td class="num">{{ '−' if result.cost >= 0.5 }}{{ result.cost|num('rub') }}</td></tr>
+      <tr><td>Брак и потери</td><td class="num">{{ '−' if result.defect >= 0.5 }}{{ result.defect|num('rub') }}</td></tr>
+      <tr><td>Налоги</td><td class="num">{{ '−' if result.taxes >= 0.5 }}{{ result.taxes|num('rub') }}</td></tr>
+      <tr class="unit-total"><td>Прибыль</td><td class="num {{ 'neg' if result.profit < 0 }}">{{ result.profit|num('rub') }}</td></tr>
+    </table>
+    <div class="unit-answers">
+      <div><span class="muted small">Цена безубыточности</span><b>{{ result.breakeven|num('rub') }}</b><span class="muted small">ниже — продажа в минус (нижний предел для акций)</span></div>
+      <div><span class="muted small">Цена для маржи {{ targets.margin|num('plain') }} %</span><b>{{ result.price_for_margin|num('rub') if result.price_for_margin else '—' }}</b></div>
+      <div><span class="muted small">Цена для ROI {{ targets.roi|num('plain') }} %</span><b>{{ result.price_for_roi|num('rub') if result.price_for_roi else '—' }}</b></div>
+      <div><span class="muted small">Продать для прибыли {{ targets.goal|num('rub') }}</span><b>{{ (result.units_for_profit|round(0, 'ceil'))|num('units') if result.units_for_profit else 'в минусе' }}</b></div>
+    </div>
+  </section>
+</form>
+{% endif %}
+{% endblock %}

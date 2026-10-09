@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% set term = mp.term('coinvest') %}
+{% block title %}{{ term }} · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/coinvest", extra_params={'offer': offer} if offer else {} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ term }} — история</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · сколько процентов цены доплачивает {{ mp.title }}
+      по каждому заказу и когда это менялось</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/coinvest.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+<details class="explain"><summary>Откуда эти цифры</summary>
+  <p>{{ mp.title }} не сообщает через свой API, какая цена у товара на витрине прямо сейчас. Зато в заказе видно, сколько заплатил
+    покупатель: это точный снимок на минуту заказа. Поэтому история строится по заказам:
+    <b>{{ term }} = 1 − цена покупателя ÷ ваша цена продавца</b>. Заказы, в которых площадка сразу не называет цену покупателя
+    (у Ozon — FBO), попадают сюда после доставки — по финансовым начислениям, но на момент заказа; они помечены «по доставке». Между заказами данных нет.
+    «Изменение» — когда у следующего заказа товара {{ term }} отличается от предыдущего на {{ change_pp|round|int }} п.п. и больше.
+    Бот в Telegram пишет в уведомлении о заказе, если {{ term }} упал на {{ alert_pp|round|int }} п.п. и больше.</p>
+</details>
+
+{% if not rows %}
+<div class="card"><div class="empty">{{ icon('percent') }}<b>За этот период нет заказов с ценой покупателя</b>
+  <span>Выберите период побольше в шапке.</span></div></div>
+{% else %}
+
+<div class="card">
+  <div class="card-head"><h2>Товары</h2><span class="muted small">{{ total_points }} заказов · нажмите на товар, чтобы увидеть график</span></div>
+  <div class="table-wrap">
+    <table class="data sortable">
+      <thead><tr><th data-sort>Товар</th><th class="num" data-sort>Сейчас (последний заказ)</th><th class="num" data-sort>Мин.</th>
+        <th class="num" data-sort>Макс.</th><th class="num" data-sort>Изменений</th><th class="num" data-sort>Заказов</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr{% if r.offer_id == offer %} class="row-active"{% endif %}>
+          <td data-v=""><a href="/coinvest?offer={{ r.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}#chart">{{ (names.get(r.offer_id) or r.offer_id)|truncate(60) }}</a>
+            <div class="muted small"><code>{{ r.offer_id }}</code></div></td>
+          <td class="num" data-v="{{ r.last }}"><b>{{ (r.last / 100)|num('pct') }}</b>
+            <div class="muted small">{{ ctx.local(r.last_at).strftime('%d.%m %H:%M') }}</div></td>
+          <td class="num" data-v="{{ r.min }}">{{ (r.min / 100)|num('pct') }}
+            <div class="muted small">{{ ctx.local(r.min_at).strftime('%d.%m %H:%M') }}</div></td>
+          <td class="num" data-v="{{ r.max }}">{{ (r.max / 100)|num('pct') }}
+            <div class="muted small">{{ ctx.local(r.max_at).strftime('%d.%m %H:%M') }}</div></td>
+          <td class="num" data-v="{{ r.changes }}">{{ r.changes }}</td>
+          <td class="num" data-v="{{ r.points }}">{{ r.points }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if offer %}
+<div class="card" id="chart">
+  <div class="card-head"><h2>{{ (names.get(offer) or offer)|truncate(70) }}</h2><span class="muted small"><code>{{ offer }}</code> · каждая точка — заказ</span></div>
+  {{ svg|safe }}
+  <div class="table-wrap" style="margin-top: 12px">
+    <table class="data">
+      <thead><tr><th>Когда</th><th class="num">{{ term }}</th><th class="num">Цена продавца</th><th class="num">Заплатил покупатель</th><th>Заказ</th></tr></thead>
+      <tbody>
+      {% for p in points[:100] %}
+        <tr><td>{{ ctx.local(p.at).strftime('%d.%m.%Y %H:%M') }}{% if p.source == 'delivery' %} <span class="muted small">по доставке</span>{% endif %}</td>
+          <td class="num"><b>{{ (p.pct / 100)|num('pct') }}</b></td><td class="num">{{ p.price|num('rub') }}</td>
+          <td class="num">{{ p.buyer|num('rub') }}</td><td class="muted small"><code>{{ p.number }}</code></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>Лента изменений</h2><span class="muted small">новые сверху · сдвиг от {{ change_pp|round|int }} п.п.</span></div>
+  {% if changes %}
+  <ul class="ci-feed">
+    {% for c in changes %}
+    <li class="{{ 'ci-down' if c.delta < 0 else 'ci-up' }}">
+      <span class="ci-time">{{ ctx.local(c.at).strftime('%d.%m %H:%M') }}</span>
+      <a class="ci-name" href="/coinvest?offer={{ c.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}#chart">{{ (names.get(c.offer_id) or c.offer_id)|truncate(55) }}</a>
+      <span class="ci-move">{{ (c['from'] / 100)|num('pct') }} → <b>{{ (c.to / 100)|num('pct') }}</b>
+        <span class="ci-delta">{{ '▼' if c.delta < 0 else '▲' }} {{ (c.delta|abs)|round(1)|string|replace('.', ',') }} п.п.</span></span>
+      <span class="muted small">{% if c.price_from != c.price_to %}цена продавца {{ c.price_from|num('rub') }} → {{ c.price_to|num('rub') }}{% else %}цена продавца не менялась ({{ c.price_to|num('rub') }}){% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">За период {{ term }} у товаров не менялся больше чем на {{ change_pp|round|int }} п.п.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ p.offer_id }} · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/product", extra_params={"offer": p.offer_id} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<a class="back-link" href="/products?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">← Все товары</a>
+<div class="product-head">
+  {% if p.image %}<img class="product-photo" src="{{ p.image }}" alt="" referrerpolicy="no-referrer">{% endif %}
+  <div>
+    <h1 class="clamp" title="{{ p.name }}">{{ p.name }}</h1>
+    <div class="meta-row">
+      <span class="pill">{{ p.offer_id }}</span>
+      {% if p.brand %}<span class="pill">{{ p.brand }}</span>{% endif %}
+      {% if p.category %}<span class="pill">{{ p.category }}</span>{% endif %}
+      {% if p.unit_cost %}<span class="pill">себестоимость {{ p.unit_cost|num }}</span>{% else %}<a class="pill bad" href="/costs">себестоимость не задана</a>{% endif %}
+      {% if p.stock is not none %}<span class="pill">на складах {{ p.stock }} шт.</span>{% endif %}
+      {% if p.ends_at %}<span class="pill{{ ' bad' if p.days_left is not none and p.days_left < 7 }}"{% if p.days_left is not none %} title="Остатка хватит примерно на {{ p.days_left|num('days') }}"{% endif %}>закончится ≈ {{ p.ends_at.strftime('%d.%m') }}</span>{% endif %}
+      {% if p.archived %}<span class="pill warn-text">в архиве</span>{% endif %}
+    </div>
+    <div class="page-actions">
+      {% set url = mp.product_url(p.card_sku) if p.card_sku else '' %}
+      {% if url %}<a class="button" href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ icon('external', 'ico-s') }}Открыть на {{ mp.title }}</a>{% endif %}
+      <a class="button" href="/unit?offer={{ p.offer_id|urlencode }}">{{ icon('calc', 'ico-s') }}Юнит-экономика</a>
+      <a class="button" href="/orders?preset=30&q={{ p.offer_id|urlencode }}">{{ icon('orders', 'ico-s') }}Заказы</a>
+    </div>
+  </div>
+</div>
+
+{% if p.price %}
+<section class="card price-card">
+  <span><span class="muted small">Цена продавца</span><br><b>{{ p.price|num('rub') }}</b>{% if p.old_price %} <s class="muted small">{{ p.old_price|num('rub') }}</s>{% endif %}</span>
+  {% if p.promo_price and p.promo_price != p.price %}<span><span class="muted small">С учётом акций</span><br><b>{{ p.promo_price|num('rub') }}</b></span>{% endif %}
+  {% if p.min_price %}<span><span class="muted small">Минимальная для акций</span><br><b>{{ p.min_price|num('rub') }}</b></span>{% endif %}
+  <span><span class="muted small">Индекс цен</span><br>{% if p.index_color %}<span class="pidx pidx-{{ p.index_color }}">{{ index_titles[p.index_color] }}</span>{% else %}<span class="muted">нет индекса</span>{% endif %}</span>
+  {% if p.competitor_price %}<span><span class="muted small">Дешевле всего на других площадках</span><br><b>{{ p.competitor_price|num('rub') }}</b>
+    {% if p.price and p.competitor_price < p.price %}<span class="bad small"> ваша на {{ (p.price / p.competitor_price - 1)|num('pct0') }} дороже</span>{% endif %}</span>{% endif %}
+  {% if p.commission_pct %}<span title="Ставка, которую {{ mp.title }} сообщает по этому товару для текущей цены (данные о ценах товара из API площадки)"><span class="muted small">Комиссия FBO / FBS — ставка {{ mp.title }} сейчас</span><br><b>{{ p.commission_pct|num('plainpct') }}</b> / {{ p.commission_fbs_pct|num('plainpct') }}</span>{% endif %}
+  {% if actual_commission %}<span title="Комиссия, которую {{ mp.title }} фактически удержал по этому товару с {{ actual_commission.since.strftime('%d.%m.%Y') }} по {{ actual_commission.until.strftime('%d.%m.%Y') }}: {{ actual_commission.commission|num('rub') }} из {{ actual_commission.sale|num('rub') }} продаж по цене продавца (и то и другое после возвратов) — по финансовым отчётам площадки. Прибыль сервис считает именно по фактическим удержаниям."><span class="muted small">Фактически удержано за 90 дней</span><br><b>{{ (actual_commission.pct|round(1))|num('plainpct') }}</b> <span class="muted small">по отчётам {{ mp.title }}</span></span>{% endif %}
+  {% if p.actions %}<details class="small" style="flex-basis: 100%"><summary>В акциях: {{ p.actions.split('; ')|length }}</summary><p class="muted">{{ p.actions }}</p></details>{% endif %}
+  {% if price_history|length > 1 %}<details class="small" style="flex-basis: 100%"><summary>История цены</summary>
+    <div class="table-wrap"><table class="data" style="width: auto">{% for d, pr, promo, color in price_history %}<tr><td>{{ d.strftime('%d.%m.%Y') }}</td><td class="num">{{ pr|num('rub') }}</td><td class="num">{{ promo|num('rub') }}</td><td>{{ index_titles.get(color, '') }}</td></tr>{% endfor %}</table></div></details>{% endif %}
+  <p class="muted small price-source">Источник: цены, индекс цен, акции и ставка комиссии — данные {{ mp.title }} о ценах товара (официальный API площадки){% if p.price_updated %}, обновлено {{ ctx.local(p.price_updated).strftime('%d.%m.%Y %H:%M') }}{% endif %}. Фактическая комиссия — по финансовым отчётам {{ mp.title }}. <a href="/help/metrics#sources">Откуда данные</a></p>
+</section>
+{% endif %}
+
+<section class="tiles" style="margin-bottom: 16px" data-tiles-page="product" data-csrf="{{ csrf }}"{% if not ctx.can_edit %} data-readonly{% endif %}>
+  {% for t in tiles %}
+  {% set v = p.get(t.key) %}
+  {# «Теряете в день» без потерь не показываем (в режиме настройки плитка видна, порядок не теряется) #}
+  <article class="tile {{ t.kind }}{{ ' is-hidden' if t.hidden }}{{ ' is-empty' if t.key == 'lost_per_day' and not v }}" data-key="{{ t.key }}">
+    <div class="tile-title">{{ t.title }}</div>
+    <div class="tile-value{{ ' neg' if (t.key in ('profit', 'margin', 'roi', 'profit_per_unit') and v is not none and v < 0) or (t.key == 'stock' and v == 0) }}">{% if t.key in ('ads', 'profit') and (p.ads_estimated or 0) >= 1 %}<span title="Часть рекламы посчитана приблизительно — см. пояснение под плитками">≈&nbsp;</span>{% endif %}{% if t.key == 'days_left' and p.stock == 0 %}нет в наличии{% else %}{{ v|num(t.fmt) }}{% endif %}{% if t.key == 'orders_coinvest' and v is not none %}<span class="tile-extra"> ({{ p.orders_coinvest_n|num('orders') }})</span>{% endif %}</div>
+  </article>
+  {% endfor %}
+</section>
+<p class="muted small" style="margin: -6px 0 16px">Реклама товара — деньги, реально списанные площадкой за его рекламу: расход кампании делится между
+  товарами по отчёту {{ mp.title }} о расходе на каждый товар{% if store and store.marketplace == 'ozon' %}, а оплаченное рекламными бонусами Ozon в затраты не входит{% endif %}.
+  {% if (p.ads_estimated or 0) >= 1 %}<b>≈ {{ p.ads_estimated|num('rub') }}</b> из рекламы — оценка: площадка ещё не прислала
+  списания за последние дни или разбивку кампании по товарам, пока они поделены пропорционально продажам.{% endif %}</p>
+
+{% if funnel %}
+<div class="card">
+  <div class="card-head"><h2>Воронка карточки</h2><a class="small" href="/funnel?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">Все товары →</a></div>
+  <div class="funnel-steps">
+    {% for title, value, rate in [("Показы", funnel.views, None), ("Переходы в карточку", funnel.card, funnel.ctr), ("В корзину", funnel.cart, funnel.to_cart), ("Заказы", funnel.orders, funnel.to_order)] %}
+    <div class="funnel-step"><div class="small muted">{{ title }}</div><div class="big">{{ value|num('units0') if value is not none else '—' }}</div>
+      <div class="small muted">{% if rate is not none %}{{ rate|num('pct') }} от предыдущего{% else %}&nbsp;{% endif %}</div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="charts">
+  {% with title="Продано и возвращено, шт.", series=units_series, svg=units_svg %}{% include "_chart.html" %}{% endwith %}
+  {% with title="Прибыль и реализация " ~ group_word, series=money_series, svg=money_svg %}{% include "_chart.html" %}{% endwith %}
+  {% with title=mp.term('coinvest') ~ " " ~ group_word ~ ", % от цены продавца", series=coinvest_series, svg=coinvest_svg %}{% include "_chart.html" %}{% endwith %}
+  {% if none in coinvest_series[0]['values'] %}<p class="muted small" style="margin: -8px 0 12px">Серая черта вместо столбика — в этот день товар не продавался: долю скидки не от чего считать.</p>{% endif %}
+</div>
+
+<details class="card">
+  <summary>Таблица по дням</summary>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Дата</th><th class="num">Заказы</th><th class="num">Продано</th><th class="num">Возвр.</th>
+        <th class="num">Реализация</th><th class="num">{{ mp.term('accrued') }}</th><th class="num">Себест.</th><th class="num">Налоги</th><th class="num">Прибыль</th></tr></thead>
+      <tbody>
+      {% for d in daily if d.orders or d.sold or d.returned or d.accrued %}
+        <tr><td>{{ d.date[8:] }}.{{ d.date[5:7] }}.{{ d.date[:4] }}</td><td class="num">{{ d.orders|int }}</td>
+          <td class="num">{{ d.sold|int }}</td><td class="num">{{ d.returned|int }}</td><td class="num">{{ d.sale_gross|num }}</td>
+          <td class="num">{{ d.accrued|num }}</td><td class="num">{{ d.cogs|num }}</td><td class="num">{{ d.taxes|num }}</td>
+          <td class="num {{ 'neg' if d.profit < 0 }}">{{ d.profit|num }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endblock %}

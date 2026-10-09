@@ -1,0 +1,24 @@
+{# Выбор периода — выпадающее меню в шапке кабинета. Параметры: action, extra_params; since, until, active, presets — из страницы. #}
+{% set labels = dict(presets) %}
+<details class="dropdown period">
+  <summary class="dropdown-btn" aria-label="Период">
+    {{ icon('calendar') }}
+    <span class="label">{{ labels.get(active, 'Свои даты') }}</span>
+    <span class="sub">{{ since.strftime('%d.%m') }} – {{ until.strftime('%d.%m.%y') }}</span>
+    {{ icon('chevron', 'ico-chevron') }}
+  </summary>
+  <div class="dropdown-panel">
+    <div class="dropdown-note">Период</div>
+    {% for key, label in presets %}
+    <a class="dropdown-item{{ ' active' if active == key }}" href="{{ action }}?preset={{ key }}{% for k, v in extra_params.items() %}&{{ k }}={{ v|urlencode }}{% endfor %}">{{ label }}{% if active == key %}<span class="check">{{ icon('check', 'ico-s') }}</span>{% endif %}</a>
+    {% endfor %}
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-note">Свои даты</div>
+    <form method="get" action="{{ action }}" class="dropdown-dates">
+      {% for key, value in extra_params.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+      <input type="date" name="date_from" value="{{ since.isoformat() }}" aria-label="С даты">
+      <input type="date" name="date_to" value="{{ until.isoformat() }}" aria-label="По дату">
+      <button type="submit" class="primary">Показать</button>
+    </form>
+  </div>
+</details>

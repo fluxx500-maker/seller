@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Новости{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Новости сервиса</h1>
+    <p class="subtitle">Что появилось и что улучшилось. Новые записи — сверху.</p>
+  </div>
+</div>
+<div class="news-list">
+  {% for n in news %}
+  <article class="card news-item{{ ' is-new' if n.at > unread_since }}">
+    <div class="news-meta">
+      <span class="news-tag tag-{{ {'новое': 'new', 'улучшение': 'better', 'исправление': 'fix'}.get(n.tag, 'new') }}">{{ n.tag }}</span>
+      <span class="muted small">{{ n.day.strftime('%d.%m.%Y') }}</span>
+      {% if n.at > unread_since %}<span class="count-badge">новое</span>{% endif %}
+    </div>
+    <h2>{{ n.title }}</h2>
+    <p>{{ n.text }}</p>
+    {% if n.link %}<a class="lp-link" href="{{ n.link }}"{% if n.link == '/tour' %} data-tour-open{% endif %}>{{ n.link_text }} {{ icon('arrow', 'ico-s') }}</a>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

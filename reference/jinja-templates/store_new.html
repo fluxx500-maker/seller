@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_help_steps.html" import key_steps, ads_steps with context %}
+{% block title %}Подключить магазин{% endblock %}
+{% block content %}
+{% set codes = marketplaces|map(attribute='code')|list %}
+{% set wanted = form.get('marketplace') or request.query_params.get('mp') %}
+{% set ready = marketplaces|selectattr('ready')|list %}
+{% set sel_code = wanted if wanted in codes else (ready[0].code if ready else codes[0]) %}
+{% set a = marketplaces|selectattr('code', 'equalto', sel_code)|first %}
+<div class="page-head">
+  <div>
+    <h1>Подключить магазин</h1>
+    <p class="subtitle">Сервис только читает данные: заказы, начисления, остатки и рекламу. Изменить что-либо в вашем кабинете по такому ключу нельзя.</p>
+  </div>
+</div>
+
+<div class="wizard-step"><span class="step-num">1</span><h2>Выберите площадку</h2></div>
+<div class="mp-choice" role="list">
+  {% for m in marketplaces %}
+  <a class="mp-option{{ ' active' if m.code == sel_code }}{{ ' soon' if not m.ready }}" role="listitem" href="/stores/new?mp={{ m.code }}"{% if m.code == sel_code %} aria-current="true"{% endif %}>
+    <span class="mp-badge lg mp-{{ m.code }}">{{ m.short }}</span>
+    <span><span class="mp-name">{{ m.title }}</span>
+      <span class="mp-state">{% if m.beta %}бета: подключение работает, сверяем на первых магазинах{% elif m.ready %}работает{% else %}скоро — можно подготовить ключ{% endif %}</span></span>
+    {% if not m.ready %}<span class="soon-tag">скоро</span>{% elif m.beta %}<span class="soon-tag">бета</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if ctx and not ctx.can_edit %}<div class="notice warn">Подключать магазины может владелец или администратор аккаунта.</div>{% endif %}
+
+<div class="wizard">
+  <div class="card">
+    <div class="wizard-step"><span class="step-num">2</span><h2>Ключ API · {{ a.title }}</h2></div>
+    {% if not a.ready %}
+    <div class="notice info">Подключение площадки «{{ a.title }}» скоро появится. Поля пока неактивны — ключ можно подготовить заранее по инструкции на этой странице.</div>
+    {% endif %}
+    <form method="post" action="/stores/new" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="marketplace" value="{{ a.code }}">
+      <fieldset{{ ' disabled' if not a.ready }}>
+        <div class="field">
+          <label for="name">Название магазина — как вам удобно</label>
+          <input id="name" name="name" value="{{ form.name or '' }}" required maxlength="200" placeholder="Например, «{{ a.title }} — основной»">
+        </div>
+        {% for f in a.fields %}
+        <div class="field">
+          <label for="{{ f.name }}">{{ f.label }}</label>
+          <input id="{{ f.name }}" name="{{ f.name }}" value="{{ '' if f.secret else (form.get(f.name) or '') }}"{% if f.secret %} type="password"{% endif %}{% if f.numeric %} inputmode="numeric"{% endif %}{% if f.required %} required{% endif %} autocomplete="off">
+          {% if f.hint %}<div class="hint-text">{{ f.hint }}</div>{% endif %}
+        </div>
+        {% endfor %}
+
+        {% if a.ad_fields %}
+        <div class="divider"></div>
+        <div class="wizard-step"><span class="step-num">3</span><h2>Реклама — по желанию</h2></div>
+        <p class="muted small">Без этого сервис посчитает прибыль, но не покажет рекламные кампании и ДРР по каждому товару.
+          Можно добавить позже на странице «Магазины».</p>
+        {% for f in a.ad_fields %}
+        <div class="field">
+          <label for="{{ f.name }}">{{ f.label }}</label>
+          <input id="{{ f.name }}" name="{{ f.name }}"{% if f.secret %} type="password"{% endif %}{% if f.numeric %} inputmode="numeric"{% endif %}{% if f.required %} required{% endif %} autocomplete="off">
+          {% if f.hint %}<div class="hint-text">{{ f.hint }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        <button class="primary big" type="submit" style="margin-top: 6px">Проверить ключ и подключить</button>
+      </fieldset>
+      <div class="trust">{{ icon('lock') }}<span>Ключи хранятся только в зашифрованном виде. Отключить доступ можно в любой момент — удалите ключ в кабинете площадки.</span></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Где взять ключ · {{ a.title }}</h2>
+    {{ key_steps(a.code) }}
+    {% if a.ad_fields %}<h2 style="margin-top: 8px">Ключ рекламы</h2>{{ ads_steps(a.code) }}{% endif %}
+    <p class="muted small">Названия пунктов меню площадки иногда меняют — если что-то не нашлось, ищите по смыслу.</p>
+    <p class="small" style="margin: 4px 0 0"><a href="/help/{{ a.code }}">Подробная инструкция с пояснениями →</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Синхронизация{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Синхронизация</h1>
+    <p class="subtitle">Как сервис получает данные площадок: полная загрузка — примерно раз в 30 минут, новые заказы — каждые несколько минут.
+      Площадки присылают начисления с задержкой 1–2 дня, Wildberries — раз в неделю.</p>
+  </div>
+</div>
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+
+{% if not rows %}
+<div class="card"><div class="empty">{{ icon('refresh') }}<b>Магазинов пока нет</b>
+  <span>Подключите первый магазин — загрузка начнётся сама.</span><a class="button primary" href="/stores/new">Подключить магазин</a></div></div>
+{% endif %}
+
+<div class="sync-list">
+  {% for r in rows %}
+  <article class="card sync-item">
+    <div class="sync-head">
+      <span class="mp-badge lg mp-{{ r.store.marketplace }}">{{ r.mp.short }}</span>
+      <div class="sync-title"><b>{{ r.store.name }}</b><small class="muted">{{ r.mp.title }}</small></div>
+      <span class="sync-state state-{{ r.sync.state }}"><i class="fresh-dot fresh-{{ r.sync.fresh }}"></i>
+        {{ {'ok': 'работает', 'run': 'загружается', 'error': 'ошибка', 'wait': 'в очереди', 'late': 'задерживается'}.get(r.sync.state, r.sync.state) }}</span>
+    </div>
+    <p class="sync-text{{ ' danger-text' if r.sync.state == 'error' }}">{{ r.sync.text }}</p>
+    <dl class="sync-facts">
+      {% if r.sync.get('next') %}<div><dt>Следующая загрузка</dt><dd>{{ r.sync.next.strftime('%d.%m %H:%M') }}</dd></div>{% endif %}
+      {% if r.orders_next %}<div><dt>Проверка новых заказов</dt><dd>{{ r.orders_next.strftime('%H:%M') }}</dd></div>{% endif %}
+      <div><dt>Начисления загружены</dt><dd>{% if r.fin_first %}{{ r.fin_first.strftime('%d.%m.%Y') }} – {{ r.fin_last.strftime('%d.%m.%Y') }}{% else %}ещё нет{% endif %}</dd></div>
+      <div><dt>Заказов</dt><dd>{{ r.counts.orders|num('int') }}</dd></div>
+      <div><dt>Товаров</dt><dd>{{ r.counts.products|num('int') }}</dd></div>
+      <div><dt>Дней рекламы</dt><dd>{{ r.counts.ad_days|num('int') }}</dd></div>
+      {% if r.fails %}<div><dt>Ошибок подряд</dt><dd class="danger-text">{{ r.fails }}</dd></div>{% endif %}
+    </dl>
+    {% if ctx.can_edit %}
+    <form method="post" action="/stores/{{ r.store.id }}/sync">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/sync">
+      <button type="submit" class="sm">{{ icon('refresh', 'ico-s') }} Обновить сейчас</button>
+      <a class="link small" href="/stores">Ключи и настройки магазина</a>
+    </form>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

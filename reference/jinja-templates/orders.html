@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Заказы · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/orders", extra_params=({"status": status} if status != "all" else {}) %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Заказы</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m') }} – {{ until.strftime('%d.%m.%Y') }} · каждый заказ с прибылью</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/orders.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}&status={{ status }}&scheme={{ scheme }}&q={{ q|urlencode }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+<section class="order-totals order-totals-4">
+  <div><span class="muted small">Заказов</span><b>{{ totals.orders }}</b><span class="muted small">{{ totals.units|num('units') }}{% if totals.cancelled %} · отменено {{ totals.cancelled }}{% endif %}</span></div>
+  <div><span class="muted small">Платят покупатели</span><b>{{ totals.buyer|num('rub') }}</b><span class="muted small">по цене продавца {{ totals.sale|num('rub') }}</span></div>
+  <div><span class="muted small">Комиссия и логистика</span><b>{{ (totals.commission + totals.logistics)|num('rub') }}</b><span class="muted small">прочие услуги {{ totals.services|num('rub') }}</span></div>
+  <div><span class="muted small" title="Без рекламы кампаний: площадка списывает её не по заказам, а по дням — она учтена в прибыли на Сводке">Прибыль по заказам (без рекламы)</span><b class="{{ 'neg' if totals.profit < 0 }}">{{ '≈ ' if totals.estimated }}{{ totals.profit|num('rub') }}</b>
+    <span class="muted small">{% if totals.margin is not none %}маржа {{ totals.margin|num('pct0') }}{% endif %}{% if totals.estimated %} · оценка у {{ totals.estimated }} заказ.{% endif %}</span></div>
+</section>
+{% if totals.no_cost %}<div class="notice warn"><span>У {{ totals.no_cost }} заказов нет себестоимости товара — их прибыль завышена. <a href="/costs">Указать себестоимость</a></span></div>{% endif %}
+
+<div class="card">
+  <form class="toolbar" method="get" action="/orders">
+    <input type="hidden" name="date_from" value="{{ since.isoformat() }}"><input type="hidden" name="date_to" value="{{ until.isoformat() }}">
+    <div class="segmented" role="group" aria-label="Статус">
+      {% for key, label in statuses.items() %}
+      <a class="chip {{ 'active' if status == key }}" href="/orders?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}&status={{ key }}{{ '&scheme=' ~ scheme if scheme }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="status" value="{{ status }}">
+    <select name="scheme" aria-label="Схема" onchange="this.form.submit()">
+      <option value="">FBO и FBS</option>
+      <option value="FBO" {{ 'selected' if scheme == 'FBO' }}>Только FBO</option>
+      <option value="FBS" {{ 'selected' if scheme == 'FBS' }}>Только FBS</option>
+    </select>
+    <input type="search" name="q" value="{{ q }}" placeholder="Номер, артикул, товар или город" aria-label="Поиск">
+    <button type="submit">Найти</button>
+  </form>
+  {% if total > limit %}<p class="muted small">Показаны последние {{ limit }} из {{ total }} — в Excel попадут все.</p>{% endif %}
+  {% if rows %}
+  {# у отменённого заказа нулевые суммы — прочерком, а не «0 ₽» #}
+  {% macro money(v, c, approx=False) %}{% if c and not v %}<span class="faint">—</span>{% else %}{{ "≈ " if approx }}{{ v|num("rub") }}{% endif %}{% endmacro %}
+  <div class="table-wrap">
+    <table class="data orders-table">
+      <thead><tr>
+        <th>Когда</th><th>Товар</th><th>Статус</th>
+        <th class="num">Платит покупатель</th><th class="num">Прибыль</th><th class="num">Комиссия</th><th class="num">Логистика</th>
+        <th class="num">Себест.</th><th class="num">Налоги</th><th>Где</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      {% set cancelled = r.status == 'cancelled' %}
+      <tr class="{{ 'row-cancelled' if cancelled }}">
+        <td class="nowrap">{% if r.created_at %}{{ ctx.local(r.created_at).strftime('%d.%m %H:%M') }}{% else %}{{ r.date.strftime('%d.%m') }}{% endif %}
+          <div class="muted small">{{ r.number }}</div></td>
+        <td>{% for x in r.items %}
+          <div class="one-line" title="{{ x.name }}"><a href="/product?offer={{ x.offer_id|urlencode }}">{{ x.name or x.offer_id }}</a>{% if x.qty > 1 %} × {{ x.qty }}{% endif %}</div>
+          <div class="muted small">{{ x.offer_id }}</div>{% endfor %}</td>
+        <td>{% if r.returned %}<span class="status status-cancelled" title="Площадка провела продажу и возврат — выручки нет, остались расходы">возврат</span>{% else %}<span class="status status-{{ r.status }}">{{ status_words.get(r.status, r.status) }}</span>{% endif %}<div class="muted small">{{ r.scheme }}</div></td>
+        <td class="num"{% if r.sale and r.buyer < r.sale %} title="Цена продавца {{ r.sale|num('rub') }}, скидка покупателю за счёт {{ mp.title }} −{{ (1 - r.buyer / r.sale)|num('pct0') }}"{% endif %}>{{ money(r.buyer, cancelled, not r.buyer_exact) }}</td>
+        {% set profit_title = ("Завышена: нет себестоимости" if r.no_cost and not cancelled else "") ~ ("; " if r.no_cost and not cancelled and r.estimated else "") ~ ("Оценка: начислений ещё нет, комиссия и логистика — по средним товара за 90 дней" if r.estimated else "") %}
+        <td class="num {{ 'neg' if r.profit < 0 }}{{ ' warn-text' if r.no_cost and not cancelled and r.profit >= 0 }}" {% if profit_title %}title="{{ profit_title }}"{% endif %}><b>{{ money(r.profit, cancelled, r.estimated) }}</b></td>
+        <td class="num">{{ money(r.commission, cancelled, r.estimated) }}</td>
+        <td class="num">{{ money(r.logistics, cancelled, r.estimated) }}</td>
+        <td class="num">{% if r.no_cost and not cancelled %}<a href="/costs" class="warn-text">нет</a>{% else %}{{ money(r.cogs, cancelled) }}{% endif %}</td>
+        <td class="num">{{ money(r.taxes, cancelled) }}</td>
+        <td class="small">{{ r.city or '—' }}{% if r.warehouse %}<div class="muted">{{ r.warehouse }}</div>{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{{ icon('orders') }}<b>Заказов за период нет</b><p>Выберите другой период в шапке или сбросьте фильтры по статусу и поиску.</p></div>
+  {% endif %}
+</div>
+<details class="explain">
+  <summary>Как считается прибыль заказа</summary>
+  <p>«≈» — {{ mp.title }} ещё не прислал начисления по заказу: комиссия и логистика посчитаны по средним этого товара
+  за 90 дней, после начислений цифры уточнятся сами. Прибыль заказа = цена продавца − комиссия − логистика − прочие услуги − себестоимость − налоги. Реклама кампаний сюда не входит: площадка списывает её по дням, а не по заказам, — поэтому прибыль по заказам больше, чем на Сводке, где реклама вычтена.
+  У отменённого заказа — только расходы на логистику, если площадка их списала. Итог может отличаться от «Сводки»:
+  там прибыль считается по дням доставки, здесь — по дням заказа.</p>
+</details>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Графики · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/charts", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Графики {{ group_word }}</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · наведите на график, чтобы увидеть цифры за день</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/charts.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+<div class="charts">
+  {% for c in charts %}
+  {% with title=c.title, series=c.series, svg=c.svg %}{% include "_chart.html" %}{% endwith %}
+  {% endfor %}
+</div>
+
+<details class="card">
+  <summary>Таблица по дням</summary>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Дата</th><th class="num">Заказы</th><th class="num" title="Сколько платят покупатели; ≈ — оценка для FBO">Сумма заказов (покупатели)</th><th class="num">Продано</th>
+        <th class="num">Реализация</th><th class="num">Оплата покупателей</th><th class="num">{{ mp.term('coinvest') }}, %</th><th class="num">{{ mp.term('accrued') }}</th>
+        <th class="num">Себест.</th><th class="num">Налоги</th><th class="num">Опер. расходы</th><th class="num">Прибыль</th></tr></thead>
+      <tbody>
+      {% for d in daily %}
+        <tr><td>{{ d.date[8:] }}.{{ d.date[5:7] }}.{{ d.date[:4] }}</td><td class="num">{{ d.orders|int }}</td>
+          <td class="num">{{ "≈ " if d.orders_approx }}{{ d.orders_amount|num }}</td><td class="num">{{ d.sold|int }}</td><td class="num">{{ d.sale_gross|num }}</td>
+          <td class="num">{{ d.paid|num }}</td><td class="num">{{ d.coinvest_pct|num('pctv') }}</td><td class="num">{{ d.accrued|num }}</td><td class="num">{{ d.cogs|num }}</td>
+          <td class="num">{{ d.taxes|num }}</td><td class="num">{{ d.opex|num }}</td>
+          <td class="num {{ 'neg' if d.profit < 0 }}">{{ d.profit|num }}</td></tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td>Итого</td><td class="num">{{ sums.orders|int }}</td><td class="num">{{ "≈ " if sums.orders_approx }}{{ sums.orders_amount|num }}</td>
+          <td class="num">{{ sums.sold|int }}</td><td class="num">{{ sums.sale_gross|num }}</td><td class="num">{{ sums.paid|num }}</td>
+          <td class="num">{{ sums.coinvest_pct|num('pctv') }}</td><td class="num">{{ sums.accrued|num }}</td><td class="num">{{ sums.cogs|num }}</td><td class="num">{{ sums.taxes|num }}</td>
+          <td class="num">{{ sums.opex|num }}</td><td class="num">{{ sums.profit|num }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+</details>
+{% endblock %}

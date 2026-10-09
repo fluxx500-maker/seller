@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Партнёрская программа{% endblock %}
+{% block content %}
+<div class="partner-page">
+  <div class="partner-head">
+    <span class="partner-ico" aria-hidden="true">{{ icon('coins') }}</span>
+    <h1>Станьте партнёром seller.bz</h1>
+    <p>{% if percent %}<b>{{ percent }} %</b> с каждого платежа приведённых клиентов — пока они пользуются сервисом.
+      {% else %}Вознаграждение с каждого платежа приведённых клиентов — размер объявим перед запуском тарифов.{% endif %}
+      Ссылка выдаётся сразу после заявки. <a href="/partners/terms">Условия программы</a></p>
+  </div>
+
+  {% if error %}<div class="notice error partner-note">{{ error }}</div>{% endif %}
+
+  {% if application %}
+  <div class="card partner-card">
+    <h2>Ваша партнёрская ссылка</h2>
+    <p class="muted small">Делитесь ею где угодно: кто зарегистрируется по ней, закрепится за вами.</p>
+    <div class="partner-link">
+      <input id="ref-link" value="{{ stats.link }}" readonly aria-label="Партнёрская ссылка">
+      <button type="button" class="primary" data-copy="#ref-link">Скопировать</button>
+    </div>
+    <div class="partner-stats">
+      <div><span>Зарегистрировались</span><b>{{ stats.invited }}</b></div>
+      <div><span>Оплатили</span><b>{{ stats.payers }}</b></div>
+      <div><span>Сумма их оплат</span><b>{{ stats.paid|num('rub') }}</b></div>
+      <div><span>Ваше вознаграждение</span><b>{{ stats.earned|num('rub') if stats.earned is not none else '—' }}</b></div>
+    </div>
+    <p class="muted small" style="margin: 14px 0 0">Заявка от {{ ctx.local(application.created_at).strftime('%d.%m.%Y') if application.created_at else '—' }} ·
+      связь: {{ application.telegram }} · где рассказываете: {{ application.channels }}</p>
+  </div>
+  {% else %}
+  <div class="card partner-card">
+    {% if not open %}
+    <div class="notice warn">Приём заявок откроется вместе с тарифами. Форму можно посмотреть заранее.</div>
+    {% elif ctx.user.role != 'owner' %}
+    <div class="notice warn">Подать заявку может только владелец аккаунта.</div>
+    {% endif %}
+    <form method="post" action="/partners/apply" class="partner-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="channels">Где планируете рассказывать о сервисе?</label>
+        <textarea id="channels" name="channels" rows="3" maxlength="1000" required {{ 'disabled' if not open }}
+          placeholder="Например: Telegram-канал про маркетплейсы на 12 000 подписчиков, наставничество продавцов, YouTube…"></textarea></div>
+      <div class="field"><label for="telegram">Telegram для связи</label>
+        <input id="telegram" name="telegram" placeholder="@username" maxlength="33" required {{ 'disabled' if not open }}
+          pattern="@?[A-Za-z0-9_]{5,32}" title="@username — 5–32 латинских букв, цифр или _"></div>
+      <label class="partner-accept"><input type="checkbox" name="accept" value="1" required {{ 'disabled' if not open }}>
+        <span>Принимаю <a href="/partners/terms" target="_blank">условия партнёрской программы</a></span></label>
+      <button class="primary partner-submit" type="submit" {{ 'disabled' if not open }}>Получить реферальную ссылку</button>
+      <p class="muted small partner-foot">Реквизиты для выплат (самозанятый, ИП или ООО) можно заполнить позже — они понадобятся
+        при первой выплате, а не для старта.</p>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

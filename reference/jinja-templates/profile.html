@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+{% set u = ctx.user %}
+<div class="page-head">
+  <div>
+    <h1>Профиль</h1>
+    <p class="subtitle">Ваш вход, аккаунт и безопасность.</p>
+  </div>
+</div>
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+<div class="profile-hero card">
+  <span class="user-ava xl" aria-hidden="true">{{ (u.email or '?')[0]|upper }}</span>
+  <div class="profile-main">
+    <h2>{{ u.email }}</h2>
+    <p class="muted small">{{ role }} · аккаунт «{{ u.account.name }}»{% if u.created_at %} · с {{ u.created_at.strftime('%d.%m.%Y') }}{% endif %}</p>
+    <div class="profile-pills">
+      {% if u.email_verified_at %}<span class="pill good">почта подтверждена</span>{% else %}<span class="pill bad">почта не подтверждена</span>{% endif %}
+      {% set a = access_info %}
+      {% if a.state == 'trial' %}<span class="pill">пробный период · {{ a.days_left|plural('день', 'дня', 'дней') }}</span>
+      {% elif a.state == 'paid' %}<span class="pill good">оплачено до {{ ctx.local(a.until).strftime('%d.%m.%Y') }}</span>
+      {% elif a.state == 'expired' %}<span class="pill bad">подписка закончилась</span>
+      {% else %}<span class="pill">без ограничений</span>{% endif %}
+      <span class="pill">{{ ctx.stores|length|plural('магазин', 'магазина', 'магазинов') }}</span>
+      <span class="pill">{{ team_size|plural('пользователь', 'пользователя', 'пользователей') }}</span>
+      <span class="pill">Telegram: {{ 'подключён' if tg_count else 'не подключён' }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  {% if u.role == 'owner' %}
+  <div class="card">
+    <h2>Название аккаунта</h2>
+    <p class="small muted">Например, название компании или ИП — его видите вы и ваши сотрудники.</p>
+    <form method="post" action="/profile/company" class="inline-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input name="name" value="{{ u.account.name }}" maxlength="200" required aria-label="Название аккаунта">
+      <button class="primary" type="submit">Сохранить</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Сменить пароль</h2>
+    <form method="post" action="/account/password">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="old">Текущий пароль</label><input id="old" name="old" type="password" autocomplete="current-password" required></div>
+      <div class="field"><label for="new">Новый пароль — не меньше 10 символов</label><input id="new" name="new" type="password" autocomplete="new-password" minlength="10" required></div>
+      <div class="field"><label for="new2">Новый пароль ещё раз</label><input id="new2" name="new2" type="password" autocomplete="new-password" minlength="10" required></div>
+      <button class="primary" type="submit">Сменить пароль</button>
+      <p class="small muted" style="margin: 10px 0 0">После смены пароля выход произойдёт на всех остальных устройствах.</p>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Быстрые ссылки</h2>
+    <ul class="link-list">
+      <li><a href="/notifications">{{ icon('send', 'ico-s') }} Telegram и уведомления</a></li>
+      <li><a href="/team">{{ icon('users', 'ico-s') }} Пользователи и доступ</a></li>
+      <li><a href="/billing">{{ icon('wallet', 'ico-s') }} Тариф и оплата</a></li>
+      <li><a href="/stores">{{ icon('key', 'ico-s') }} Магазины и ключи API</a></li>
+      <li><a href="/guide">{{ icon('spark', 'ico-s') }} Обучающий гид</a></li>
+    </ul>
+  </div>
+
+  {% if u.role == 'owner' %}
+  <div class="card" id="danger">
+    <h2>Удалить аккаунт</h2>
+    <p class="small">Безвозвратно удалятся все магазины, ключи, загруженные данные, себестоимость, расходы, сотрудники и привязки Telegram.
+      Ключи в кабинетах площадок останутся — их можно удалить там же, где создавали.</p>
+    <form method="post" action="/account/delete" onsubmit="return confirm('Удалить аккаунт и все данные без возможности восстановления?')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field"><label for="confirm">Для подтверждения введите свою почту</label>
+        <input id="confirm" name="confirm" type="email" autocomplete="off" required></div>
+      <div class="field"><label for="del-password">И свой пароль</label>
+        <input id="del-password" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="danger" type="submit">Удалить аккаунт</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Воронка · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/funnel", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Воронка карточек</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · показы → карточка → корзина → заказ, по данным аналитики {{ mp.title }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/funnel.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+{% if not coverage[0] %}
+<div class="notice warn"><span>Данные воронки ещё загружаются — загрузчик подтягивает их в фоне: сначала последнюю неделю, потом историю назад.</span></div>
+{% elif since < coverage[0] %}
+<div class="notice"><span>Воронка загружена с {{ coverage[0].strftime('%d.%m.%Y') }} — история догружается в фоне.</span></div>
+{% elif coverage[1] and until > coverage[1] %}
+<div class="notice"><span>Воронка есть по {{ coverage[1].strftime('%d.%m.%Y') }} включительно — площадка отдаёт её с задержкой, следующие дни появятся сами.</span></div>
+{% endif %}
+
+<div class="funnel-steps">
+  {% set steps = [("Показы", total.views, None), ("Переходы в карточку", total.card, total.ctr), ("В корзину", total.cart, total.to_cart), ("Заказы", total.orders, total.to_order)] %}
+  {% for title, value, rate in steps %}
+  <div class="card funnel-step">
+    <div class="small muted">{{ title }}</div>
+    <div class="big">{{ value|num('units0') if value is not none else '—' }}</div>
+    <div class="small muted">{% if rate is not none %}{{ rate|num('pct') }} от предыдущего шага{% elif value is none %}площадка не отдаёт{% else %}&nbsp;{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+<p class="muted small">Сумма заказов по данным {{ mp.title }} — по цене продавца, вместе с отменами: <b>{{ total.revenue|num('rub') }}</b>{% if total.card_to_order is not none %} · из карточки в заказ: {{ total.card_to_order|num('pct') }}{% endif %}{% if total.avg_price %} · средняя цена продавца за заказанную штуку {{ total.avg_price|num('rub') }}{% endif %}.
+  Поэтому она больше «Заказано» на сводке: там — сколько платят покупатели, без отменённых заказов.</p>
+
+{% with title="Переходы и корзина по дням", series=series, svg=svg %}{% include "_chart.html" %}{% endwith %}
+<div class="grid-2">
+  {% with title="Заказы по дням", series=orders_series, svg=orders_svg %}{% include "_chart.html" %}{% endwith %}
+  {% with title="Конверсия по дням, %", series=conv_series, svg=conv_svg %}{% include "_chart.html" %}{% endwith %}
+</div>
+
+<div class="card">
+  <h2>По товарам</h2>
+  {% if rows %}
+  <div class="toolbar"><input type="search" data-filter="#funnel" placeholder="Поиск по названию или артикулу" aria-label="Поиск"><span class="muted small" data-filter-count></span></div>
+  <div class="table-wrap">
+  <table class="data sortable" id="funnel">
+    <thead><tr><th data-sort>Товар</th><th class="num" data-sort>Показы</th><th class="num" data-sort>Карточка</th><th class="num" data-sort title="Из показа — в карточку">CTR</th>
+      <th class="num" data-sort>В корзину</th><th class="num" data-sort title="Из карточки — в корзину">Конв. в корзину</th>
+      <th class="num" data-sort>Заказы</th><th class="num" data-sort title="Из корзины — в заказ">Конв. в заказ</th><th class="num" data-sort title="По цене продавца, вместе с отменами — как считает площадка">Сумма заказов (цена продавца)</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td data-v="" class="with-thumb">{% if r.image %}<img class="thumb" src="{{ r.image }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% endif %}
+        <a class="one-line" href="/product?offer={{ r.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}" title="{{ r.name }}">{{ r.name }}</a>
+        <div class="muted small"><code>{{ r.offer_id }}</code></div></td>
+      <td class="num" data-v="{{ r.views if r.views is not none else '' }}">{{ r.views|num('units0') if r.views is not none else '—' }}</td>
+      <td class="num" data-v="{{ r.card if r.card is not none else '' }}">{{ r.card|num('units0') if r.card is not none else '—' }}</td>
+      <td class="num" data-v="{{ r.ctr if r.ctr is not none else '' }}">{{ r.ctr|num('pct') if r.ctr is not none else '—' }}</td>
+      <td class="num" data-v="{{ r.cart }}">{{ r.cart|num('units0') }}</td>
+      <td class="num" data-v="{{ r.to_cart if r.to_cart is not none else '' }}">{{ r.to_cart|num('pct') if r.to_cart is not none else '—' }}</td>
+      <td class="num" data-v="{{ r.orders }}">{{ r.orders|num('units0') }}</td>
+      <td class="num" data-v="{{ r.to_order if r.to_order is not none else '' }}">{{ r.to_order|num('pct') if r.to_order is not none else '—' }}</td>
+      <td class="num" data-v="{{ r.revenue }}">{{ r.revenue|num('rub') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">Где низкая конверсия в корзину — смотрите фото, цену и отзывы карточки; где мало показов — поиск и рекламу.
+    Заказы в воронке — по данным аналитики площадки на момент заказа, до отмен и возвратов.</p>
+  {% else %}
+  <div class="empty">{{ icon('chart') }}<b>Нет данных за период</b><p>Выберите другой период или дождитесь загрузки.</p></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

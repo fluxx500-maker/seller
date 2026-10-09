@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}P&amp;L · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Прибыли и убытки по месяцам</h1>
+    <p class="subtitle">
+      {{ r.since.strftime('%d.%m.%Y') }} – {{ r.until.strftime('%d.%m.%Y') }} · по начислениям {{ mp.title }}
+      <button type="button" class="hint" data-hint="Продажа попадает в месяц, когда товар доставлен покупателю: так её начисляет {{ mp.title }}. Расходы показаны со знаком «−»." aria-label="Как считается P&amp;L">?</button>
+    </p>
+  </div>
+  <div class="page-actions">
+    <div class="segmented" role="group" aria-label="Сколько месяцев">
+      {% for m in month_options %}
+      <a class="chip {{ 'active' if months == m }}" href="/pnl?months={{ m }}&until={{ r.until.strftime('%Y-%m') }}">{{ m }} мес.</a>
+      {% endfor %}
+    </div>
+    <a class="button" href="/pnl?months={{ months }}&until={{ prev_until }}">← Раньше</a>
+    {% if not is_current %}<a class="button" href="/pnl?months={{ months }}&until={{ next_until }}">Позже →</a>{% endif %}
+    <a class="button" href="/pnl.xlsx?months={{ months }}&until={{ r.until.strftime('%Y-%m') }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+{% if coverage_from and r.since.isoformat() < coverage_from %}
+<div class="notice warn">Начисления {{ mp.title }} загружены только с {{ coverage_from }} — месяцы раньше этой даты пустые или неполные.</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-wrap pnl-wrap">
+    <table class="pnl">
+      <thead>
+        <tr>
+          <th>Статья</th>
+          {% for c in r.columns %}<th class="num">{{ c.title }}{% if c.partial %}<span class="muted small" title="Месяц ещё не закончился"> *</span>{% endif %}</th>{% endfor %}
+          <th class="num">Итого</th>
+          <th class="num" title="Доля строки от реализации за весь период">% от реализации</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for key, title, fmt, style in r.lines %}
+        <tr class="pnl-{{ style or 'row' }}">
+          <td>{{ title }}</td>
+          {% for c in r.columns %}{% set v = c['values'].get(key) %}
+          <td class="num {{ 'neg' if fmt != 'units' and v is not none and v < 0 and style == 'total' }}">{{ v|num(fmt) if v else ('—' if v is none else '0') }}</td>
+          {% endfor %}
+          {% set t = r.total.get(key) %}
+          <td class="num pnl-sum {{ 'neg' if fmt != 'units' and t is not none and t < 0 and style == 'total' }}">{{ t|num(fmt) if t else ('—' if t is none else '0') }}</td>
+          {% set base = r.total.get('sale_gross') %}
+          <td class="num muted">{% if fmt == 'rub' and base and t and key not in ('paid', 'coinvest') or key == 'coinvest' and base and t %}{{ (t / base)|num('pct') }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small" style="margin: 14px 0 0">
+    * — месяц ещё идёт. Начисления {{ mp.title }} приходят с задержкой 1–2 дня, поэтому последние дни могут дополниться.
+    Операционные расходы — из раздела «Расходы». Налоги — по ставкам из «Настроек налогов».
+  </p>
+</div>
+{% endblock %}

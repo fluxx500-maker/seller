@@ -1,0 +1,35 @@
+{% extends "_auth.html" %}
+{% block title %}Регистрация{% endblock %}
+{% block content %}
+{% if sent %}
+<h1>Проверьте почту</h1>
+<p class="subtitle">Мы отправили письмо на <b>{{ email }}</b>. Откройте ссылку из письма и придумайте пароль — на этом регистрация закончится.</p>
+<p class="small muted">Письма нет несколько минут — загляните в папку «Спам» или <a href="/signup">отправьте ещё раз</a>. Ссылка действует сутки.</p>
+{% if dev_link %}
+<div class="notice warn"><span>Почтовый сервис ещё не подключён, поэтому письмо не ушло. Для проверки на этом компьютере — ссылка из письма:
+  <a href="{{ dev_link }}">закончить регистрацию</a></span></div>
+{% endif %}
+{% else %}
+<h1>Регистрация</h1>
+<p class="subtitle">Введите почту — пришлём письмо, по ссылке из него вы придумаете пароль. Потом подключите магазин Ozon, Wildberries или Яндекс Маркета по ключу «только чтение» — сервис ничего не меняет в вашем кабинете.</p>
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+<form method="post" action="/signup">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <div>
+    <label for="email">Почта — это ваш логин</label>
+    <input id="email" name="email" type="email" value="{{ email }}" autocomplete="email" required autofocus>
+  </div>
+  <div>
+    <label for="company">Название компании или ИП (можно позже)</label>
+    <input id="company" name="company" value="{{ company }}" autocomplete="organization">
+  </div>
+  <label class="consent">
+    <input type="checkbox" name="consent" value="1" required>
+    <span>Соглашаюсь на обработку персональных данных в соответствии с <a href="/legal/privacy" target="_blank">политикой</a>
+      и принимаю <a href="/legal/offer" target="_blank">условия сервиса</a>.</span>
+  </label>
+  <button class="primary" type="submit">Получить письмо</button>
+</form>
+{% endif %}
+<p class="auth-foot">Уже есть аккаунт? <a href="/login">Войти</a></p>
+{% endblock %}

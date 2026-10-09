@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Обучающий гид{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Обучающий гид</h1>
+    <p class="subtitle">Шесть шагов, чтобы кабинет показывал точную прибыль, — отметки ставятся сами, когда шаг выполнен. Седьмой — разобраться в цифрах.</p>
+  </div>
+</div>
+
+<div class="card guide-progress">
+  <div><b>Готово {{ done }} из {{ total }}</b><span class="muted small">{{ 'Всё настроено — отличная работа!' if done == total else 'Продолжите со следующего шага ниже.' }}</span></div>
+  <div class="guide-bar" role="progressbar" aria-valuenow="{{ done }}" aria-valuemin="0" aria-valuemax="{{ total }}"><i style="width: {{ (done / total * 100)|round }}%"></i></div>
+  <a class="button" href="/tour" data-tour-open>{{ icon('eye', 'ico-s') }} Видео-знакомство · 1 мин</a>
+</div>
+
+{% set ns = namespace(next=true) %}
+<ol class="guide-steps">
+  {% for ico, title, text, href, button, ok in steps %}
+  {% set current = ok is sameas false and ns.next %}
+  {% if current %}{% set ns.next = false %}{% endif %}
+  <li class="card guide-step{{ ' is-done' if ok }}{{ ' is-current' if current }}">
+    <span class="guide-num">{% if ok %}{{ icon('check') }}{% else %}{{ loop.index }}{% endif %}</span>
+    <div class="guide-body">
+      <h2>{{ title }}{% if ok %} <span class="pill good">сделано</span>{% endif %}</h2>
+      <p>{{ text }}</p>
+    </div>
+    <a class="button{{ ' primary' if current }}" href="{{ href }}">{{ button }}</a>
+  </li>
+  {% endfor %}
+</ol>
+{% endblock %}

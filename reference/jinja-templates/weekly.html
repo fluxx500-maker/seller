@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}По неделям · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Отчёт {{ 'по неделям' if mode == 'week' else 'по месяцам' }}</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m') }} – {{ until.strftime('%d.%m.%Y') }} · под числом — изменение к предыдущей строке ·
+      заказы — по дате заказа, остальное — по начислениям {{ mp.title }}</p>
+  </div>
+  <div class="page-actions">
+    <div class="segmented" role="group" aria-label="Шаг отчёта">
+      <a class="chip {{ 'active' if mode == 'week' }}" href="/weekly?mode=week">12 недель</a>
+      <a class="chip {{ 'active' if mode == 'month' }}" href="/weekly?mode=month">12 месяцев</a>
+    </div>
+    <a class="button" href="/weekly.xlsx?mode={{ mode }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table class="data weekly">
+      <thead><tr><th>{{ 'Неделя' if mode == 'week' else 'Месяц' }}</th>{% for k, title, fmt, _ in t.columns %}<th class="num">{{ title }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for r in t.rows %}
+        <tr{% if r.partial or r.fin_missing %} class="row-partial"{% endif %}><td>{{ r.title.replace('Неделя ', '') }}{% if r.partial %}<div class="small muted">идёт: {{ r.partial[0] }} из {{ r.partial[1] }} дн.</div>{% endif %}{% if r.fin_missing %}<div class="small muted">начисления ещё не пришли за {{ r.fin_missing|plural('день', 'дня', 'дней') }}</div>{% endif %}</td>
+          {% for k, title, fmt, _ in t.columns %}{% set d = (r.delta or {}).get(k) %}
+          <td class="num {{ 'neg' if k in ('profit', 'margin') and r[k] is not none and r[k] < 0 }}">{{ r[k]|num(fmt) }}
+            {% if d %}<div class="wdelta {{ 'good' if d.good else 'bad' if d.good == false }}">{{ '↑' if d.value > 0 else '↓' }} {{ (d.value|abs * 100)|round(1)|num('plain') }}{{ ' п.п.' if d.pp else ' %' }}</div>{% endif %}</td>
+          {% endfor %}</tr>
+      {% endfor %}
+      </tbody>
+      <tfoot><tr><td>Итого</td>{% for k, title, fmt, _ in t.columns %}<td class="num">{{ t.total.get(k)|num(fmt) }}</td>{% endfor %}</tr></tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

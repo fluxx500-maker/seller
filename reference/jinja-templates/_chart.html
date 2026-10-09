@@ -1,0 +1,7 @@
+<div class="card chart-card">
+  <div class="chart-head"><h2>{{ title }}</h2><button type="button" class="link chart-zoom" title="На весь экран" aria-label="Открыть график на весь экран">⤢</button></div>
+  <div class="legend">
+    {% for s in series %}<span><i class="{{ 'line' if s.kind != 'bar' }}{{ ' dash' if s.dash }}" style="{{ 'color' if s.dash else 'background' }}: {{ s.color }}"></i>{{ s.label }}</span>{% endfor %}
+  </div>
+  {{ svg|safe }}
+</div>

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}География · {{ store.name }} {{ mp.title }}{% endblock %}
+{% macro geo_table(rows, first_title, total, rest=none) %}
+<div class="table-wrap">
+  <table class="data sortable geo">
+    <thead><tr>
+      <th data-sort>{{ first_title }}</th><th class="num" data-sort>Заказов</th><th class="num" data-sort>Шт.</th>
+      <th class="num" data-sort>Сумма (платят покупатели)</th><th class="num" data-sort>Доля</th>
+      <th class="num" data-sort>Средний чек</th><th class="num" data-sort>Отмены</th>
+    </tr></thead>
+    <tbody>
+    {% set max_share = (rows|map(attribute='share')|max) if rows else 0 %}
+    {% for g in rows %}
+      <tr>
+        <td data-v="">{{ g.name }}</td>
+        <td class="num" data-v="{{ g.active }}">{{ g.active|num('units0') }}</td>
+        <td class="num" data-v="{{ g.units }}">{{ g.units|num('units0') }}</td>
+        <td class="num" data-v="{{ g.amount }}">{{ '≈ ' if g.approx }}{{ g.amount|num }}</td>
+        <td class="num" data-v="{{ g.share }}"><div class="share"><div class="share-bar" aria-hidden="true"><i style="width: {{ (g.share / max_share * 100)|round(1) if max_share else 0 }}%"></i></div>{{ g.share|num('pct0') }}</div></td>
+        <td class="num" data-v="{{ g.avg_check or '' }}">{{ g.avg_check|num }}</td>
+        <td class="num {{ 'neg' if g.cancel_rate and g.cancel_rate > 0.2 }}" data-v="{{ g.cancel_rate or '' }}">{% if g.cancelled %}{{ g.cancelled }} ({{ g.cancel_rate|num('pct0') }}){% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    {% if rest %}
+    <tfoot>
+      <tr class="muted">
+        <td>{{ rest.name }} ({{ rest.count|plural('город', 'города', 'городов') }})</td>
+        <td class="num">{{ rest.active|num('units0') }}</td><td class="num">{{ rest.units|num('units0') }}</td>
+        <td class="num">{{ '≈ ' if rest.approx }}{{ rest.amount|num }}</td><td class="num">{{ rest.share|num('pct0') }}</td>
+        <td class="num">{{ rest.avg_check|num }}</td>
+        <td class="num">{% if rest.cancelled %}{{ rest.cancelled }} ({{ rest.cancel_rate|num('pct0') }}){% else %}—{% endif %}</td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+{% endmacro %}
+{% block period %}{% with action="/geo", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>География продаж</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · по заказам, созданным в периоде · суммы — сколько платят покупатели (≈ — оценка для FBO до доставки)</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/geo.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+<section class="tiles compact" style="margin-bottom: 16px">
+  <article class="tile income"><div class="tile-title">Заказов без отмен</div><div class="tile-value">{{ geo.total.active|num('units0') }}</div></article>
+  <article class="tile income"><div class="tile-title">Сумма заказов</div><div class="tile-value">{{ '≈ ' if geo.total.approx }}{{ geo.total.amount|num }}</div></article>
+  <article class="tile expense"><div class="tile-title">Отменено</div><div class="tile-value">{{ geo.total.cancelled }}{% if geo.total.orders %}<span class="tile-extra"> ({{ (geo.total.cancelled / geo.total.orders)|num('pct0') }})</span>{% endif %}</div></article>
+  {% for s in geo.schemes %}
+  <article class="tile neutral"><div class="tile-title">{{ s.name }}</div><div class="tile-value">{{ s.active|num('units0') }}<span class="tile-extra"> ({{ s.share|num('pct0') }} суммы)</span></div></article>
+  {% endfor %}
+</section>
+
+{% if not geo.total.orders %}
+<div class="card"><div class="empty">{{ icon('pin') }}<b>За этот период заказов нет</b><p>Выберите период побольше в шапке страницы.</p></div></div>
+{% else %}
+{% set named_regions = geo.regions|rejectattr("name", "equalto", "Не указан")|list %}
+<div class="{{ 'grid-2' if named_regions|length >= 2 }}">
+  <div class="card">
+    <h2>Города</h2>
+    <p class="muted small">Город доставки. По части заказов (чаще FBS) {{ mp.title }} город не сообщает — они в строке «Не указан».</p>
+    {{ geo_table(geo.cities_top, "Город", geo.total, geo.cities_rest) }}
+  </div>
+  {% if named_regions|length >= 2 %}
+  <div class="card">
+    <h2>Регионы</h2>
+    <p class="muted small">Регион {{ mp.title }} сообщает не всегда — такие заказы в строке «Не указан».</p>
+    {{ geo_table(geo.regions, "Регион", geo.total) }}
+  </div>
+  {% endif %}
+</div>
+<div class="card">
+  <h2>Склады отгрузки</h2>
+  <p class="muted small">С какого склада площадки (FBO) или вашего склада (FBS) уходили заказы. Много заказов с далёкого склада — повод завезти товар ближе к покупателям.</p>
+  {{ geo_table(geo.warehouses, "Склад", geo.total) }}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "_auth.html" %}
+{% block title %}{{ 'Приглашение' if invite else 'Новый пароль' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Добро пожаловать!' if invite else 'Новый пароль' }}</h1>
+{% if invite %}<p class="subtitle">Придумайте пароль для входа в seller.bz.</p>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if token %}
+<form method="post" action="/reset">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="token" value="{{ token }}">
+  <div>
+    <label for="new">Пароль — не меньше 10 символов</label>
+    <input id="new" name="new" type="password" autocomplete="new-password" minlength="10" required autofocus>
+  </div>
+  <div>
+    <label for="new2">Пароль ещё раз</label>
+    <input id="new2" name="new2" type="password" autocomplete="new-password" minlength="10" required>
+  </div>
+  {% if invite %}
+  <label class="consent">
+    <input type="checkbox" name="consent" value="1" required>
+    <span>Соглашаюсь на обработку персональных данных в соответствии с <a href="/legal/privacy" target="_blank">политикой</a>
+      и принимаю <a href="/legal/offer" target="_blank">условия сервиса</a>.</span>
+  </label>
+  {% endif %}
+  <button class="primary" type="submit">Сохранить и войти</button>
+</form>
+{% else %}
+<p><a class="button" href="/forgot">Запросить новую ссылку</a></p>
+{% endif %}
+<p class="small auth-back"><a href="/login">← Ко входу</a></p>
+{% endblock %}

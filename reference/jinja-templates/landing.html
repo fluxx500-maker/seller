@@ -1,0 +1,313 @@
+{% extends "_public.html" %}
+{% block title %}seller.bz — прибыль продавца Ozon, Wildberries и Яндекс Маркета{% endblock %}
+{% block body %}
+{% macro checks(items) %}<ul class="lp-checks">{% for t in items %}<li>{{ t }}</li>{% endfor %}</ul>{% endmacro %}
+<main>
+  <!-- первый экран: всё по центру, как у лидеров рынка -->
+  <section class="lp-hero lp-hero-c">
+    <div class="lp-wrap lp-center">
+      <div class="lp-pills">
+        <span class="lp-pill lp-pill-accent">{{ icon('spark', 'ico-s') }} Новое · Wildberries и Яндекс Маркет</span>
+        <span class="lp-pill">{% for m in all_marketplaces() %}<span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span>{% endfor %} три площадки — один кабинет</span>
+      </div>
+      <p class="lp-kicker">Аналитика. Контроль. Прибыль.</p>
+      <h1 class="lp-title"><span class="lp-grad">Каждый рубль на виду.</span><br>Решения — по цифрам.</h1>
+      <p class="lp-tagline">Сколько вы на самом деле зарабатываете на маркетплейсах</p>
+      <p class="lp-lead lp-lead-c">Комиссии, логистика, реклама, хранение, себестоимость и налоги — чистая прибыль каждого заказа
+        и каждого товара на Ozon, Wildberries и Яндекс Маркете, в одном кабинете.</p>
+
+      <!-- витрина: так выглядит кабинет -->
+      <div class="lp-show">
+        <div class="lp-show-head">
+          <span class="lp-show-tag">{{ icon('eye', 'ico-s') }} Так выглядит кабинет</span>
+          <p class="lp-show-title">Прибыль, заказы и остатки — на одном экране</p>
+        </div>
+        <a class="lp-play" href="/tour" data-tour-open aria-label="Смотреть видео-знакомство">
+          <span class="lp-play-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
+          <span>Смотреть видео · 1 мин</span>
+        </a>
+        <div class="lp-screen" aria-hidden="true">
+          <div class="lp-screen-bar"><i></i><i></i><i></i><span>seller.bz</span></div>
+          <div class="lp-screen-body">
+            <div class="ms-hero">
+              <span class="ms-label">Чистая прибыль</span>
+              <b class="ms-big">312 450 ₽</b>
+              <span class="ms-small">маржа 18,4 % · ↑ 12 % к прошлому месяцу</span>
+            </div>
+            <div class="ms-tile"><span class="ms-label">Заказано</span><b>1 698 000 ₽</b><span class="ms-small">1 204 шт.</span></div>
+            <div class="ms-tile"><span class="ms-label">Выкуп</span><b>91 %</b><span class="ms-small">↑ 2 п.п.</span></div>
+            <div class="ms-tile"><span class="ms-label">ДРР</span><b>7,8 %</b><span class="ms-small ms-good">↓ 1,1 п.п.</span></div>
+            <div class="ms-chart">
+              <span class="ms-label">Прибыль по дням</span>
+              <div class="ms-bars">{% for h in [36, 48, 32, 58, 44, 68, 54, 76, 60, 72, 48, 80, 66, 84, 70, 62, 78, 88] %}<i style="height: {{ h }}%; --i: {{ loop.index0 }}"></i>{% endfor %}</div>
+            </div>
+          </div>
+        </div>
+        <p class="lp-show-note">Иллюстрация, цифры условные</p>
+      </div>
+
+      <p class="lp-slogan">Вся экономика магазина — в одном месте, без таблиц Excel.</p>
+      <div class="lp-cta lp-cta-c">
+        {% if signup_open %}
+        <a class="button primary big" href="/signup">Попробовать {{ icon('arrow', 'ico-s') }}</a>
+        <a class="button big lp-btn-outline" href="/login">Войти</a>
+        {% else %}
+        <a class="button primary big" href="/login">Войти в кабинет {{ icon('arrow', 'ico-s') }}</a>
+        <a class="button big lp-btn-outline" href="#how">Как начать</a>
+        {% endif %}
+      </div>
+      <p class="lp-small-link">{{ icon('spark', 'ico-s') }} Сервис в разработке и проходит закрытое тестирование ·
+        <a href="/help">как получить ключ площадки {{ icon('arrow', 'ico-s') }}</a></p>
+    </div>
+  </section>
+
+  <!-- «как на ладони»: телефон с рукописными подписями -->
+  <section class="lp-section lp-palm">
+    <div class="lp-wrap lp-split">
+      <div>
+        <h2 class="lp-h2">Вся экономика магазина — <span class="lp-accent">как на ладони</span></h2>
+        <p class="lp-sub">seller.bz раскладывает каждый товар и каждый заказ на Ozon, Wildberries и Яндекс Маркете — от выручки
+          до чистой прибыли. С телефона тоже удобно.</p>
+        {{ checks(['Заказы и прибыль — обновляются каждые 30 минут, новые заказы чаще',
+                   'Все расходы: комиссия, логистика, хранение, реклама, налог',
+                   'Чистая прибыль и маржа по каждому артикулу']) }}
+      </div>
+      <div class="lp-phone-wrap" aria-hidden="true">
+        <span class="lp-hand lp-hand-1">выручка, расходы<br>и чистая прибыль —<br>по полочкам</span>
+        <svg class="lp-arrow lp-arrow-1" viewBox="0 0 120 60"><path d="M6 6 C 40 8, 76 22, 108 44"/><path d="M94 44 L 110 46 L 104 31"/></svg>
+        <div class="lp-phone">
+          <div class="lp-phone-notch"></div>
+          <div class="lp-phone-screen">
+            <p class="mp-title">Финансы · сентябрь</p>
+            <div class="mp-hero"><span>Чистая прибыль</span><b>312 450 ₽</b></div>
+            <ul class="mp-rows">
+              <li><span>Реализация</span><b>1 698 000</b></li>
+              <li><span>Комиссия</span><b class="neg">−390 540</b></li>
+              <li><span>Логистика</span><b class="neg">−203 760</b></li>
+              <li><span>Реклама</span><b class="neg">−132 440</b></li>
+              <li><span>Хранение</span><b class="neg">−25 470</b></li>
+              <li><span>Себестоимость</span><b class="neg">−543 360</b></li>
+              <li><span>Налоги</span><b class="neg">−89 980</b></li>
+            </ul>
+          </div>
+        </div>
+        <span class="lp-hand lp-hand-2">каждый рубль —<br>отдельной строкой</span>
+        <svg class="lp-arrow lp-arrow-2" viewBox="0 0 120 60"><path d="M114 54 C 80 50, 40 36, 12 14"/><path d="M26 12 L 10 12 L 14 28"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- разделы-возможности: текст и макет по очереди слева и справа -->
+  <section id="features" class="lp-section lp-alt">
+    <div class="lp-wrap lp-split">
+      <div>
+        <p class="lp-label">{{ icon('orders', 'ico-s') }} Заказы и прибыль</p>
+        <h2 class="lp-h2">Прибыль каждого заказа</h2>
+        <p class="lp-sub">Площадки прячут десятки видов комиссий и удержаний. Мы раскладываем каждую продажу — видно, сколько
+          останется вам на самом деле.</p>
+        {{ checks(['Сумма заказа — сколько заплатил покупатель, а не цена продавца',
+                   'Комиссия и логистика — из начислений площадки по конкретному отправлению',
+                   'Пока начислений нет — честная оценка со значком «≈»',
+                   'Новые заказы и отмены — сразу в Telegram']) }}
+      </div>
+      <div class="lp-mock" aria-hidden="true">
+        <p class="lp-mock-title">Лента заказов</p>
+        <ul class="mk-feed">
+          {% for time, name, mp, price, profit, est in [
+            ('14:32', 'Термокружка 450 мл', 'ozon', '1 290 ₽', '+ 318 ₽', False),
+            ('14:05', 'Рюкзак городской', 'wb', '2 740 ₽', '+ 612 ₽', True),
+            ('13:48', 'Коврик для йоги', 'yandex', '1 860 ₽', '+ 244 ₽', False),
+            ('13:21', 'Настольная лампа', 'ozon', '3 150 ₽', '− 96 ₽', False),
+            ('12:57', 'Набор контейнеров', 'wb', '990 ₽', '+ 187 ₽', True),
+          ] %}
+          <li><span class="mk-time">{{ time }}</span><span class="mp-badge mp-{{ mp }}">{{ {'ozon': 'OZ', 'wb': 'WB', 'yandex': 'ЯМ'}[mp] }}</span>
+            <span class="mk-name">{{ name }}<small>{{ price }}</small></span>
+            <b class="{{ 'bad' if profit.startswith('−') else 'good' }}">{{ '≈ ' if est }}{{ profit }}</b></li>
+          {% endfor %}
+        </ul>
+        <p class="lp-art-note">Цифры условные</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-wrap lp-split lp-rev">
+      <div>
+        <p class="lp-label">{{ icon('megaphone', 'ico-s') }} Реклама</p>
+        <h2 class="lp-h2">Реклама под контролем</h2>
+        <p class="lp-sub">Видно, какая кампания приносит прибыль, а какая только тратит бюджет. Решения — на цифрах, а не на ощущениях.</p>
+        {{ checks(['ДРР по кампаниям и по каждому товару',
+                   'Расход на рекламу рядом с прибылью от продаж',
+                   'Предупреждение, если ДРР резко вырос или кампания остановилась']) }}
+      </div>
+      <div class="lp-mock" aria-hidden="true">
+        <p class="lp-mock-title">Кампании за 30 дней</p>
+        <table class="mk-table">
+          <thead><tr><th>Кампания</th><th>Расход</th><th>ДРР</th></tr></thead>
+          <tbody>
+            <tr><td>Поиск · кружки</td><td>18 400 ₽</td><td><span class="pill good">5,2 %</span></td></tr>
+            <tr><td>Карточка · рюкзаки</td><td>26 900 ₽</td><td><span class="pill good">8,1 %</span></td></tr>
+            <tr><td>Трафареты · лампы</td><td>31 200 ₽</td><td><span class="pill bad">27,5 %</span></td></tr>
+            <tr><td>Поиск · коврики</td><td>9 700 ₽</td><td><span class="pill warn">14,0 %</span></td></tr>
+          </tbody>
+        </table>
+        <p class="lp-art-note">Цифры условные</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section lp-alt">
+    <div class="lp-wrap lp-split">
+      <div>
+        <p class="lp-label">{{ icon('box', 'ico-s') }} Остатки</p>
+        <h2 class="lp-h2">Товар не закончится внезапно</h2>
+        <p class="lp-sub">Остатки на складах площадок и на своём складе — в одном окне, с датой, когда товар закончится.</p>
+        {{ checks(['Скорость продаж считается только по дням, когда товар был в наличии',
+                   '«Закончится к» и упущенная выручка из-за пустого склада',
+                   'Расчёт поставки: сколько штук везти и во сколько обойдётся закупка']) }}
+      </div>
+      <div class="lp-mock" aria-hidden="true">
+        <p class="lp-mock-title">Остатки и прогноз</p>
+        <ul class="mk-stock">
+          {% for name, left, days, lvl in [('Термокружка 450 мл', 412, 38, 'good'), ('Рюкзак городской', 64, 9, 'warn'),
+                                           ('Коврик для йоги', 18, 3, 'bad'), ('Набор контейнеров', 230, 52, 'good')] %}
+          <li><span class="mk-name">{{ name }}<small>{{ left }} шт. · хватит на {{ days }} дн.</small></span>
+            <span class="mk-meter"><i class="{{ lvl }}" style="width: {{ [days * 1.6, 100] | min }}%"></i></span></li>
+          {% endfor %}
+        </ul>
+        <p class="lp-art-note">Цифры условные</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-wrap lp-split lp-rev">
+      <div>
+        <p class="lp-label">{{ icon('table', 'ico-s') }} Финансы</p>
+        <h2 class="lp-h2">P&amp;L, юнит-экономика и налоги</h2>
+        <p class="lp-sub">Отчёт о прибылях и убытках по месяцам, калькулятор «что если» на фактических цифрах товара и налоги
+          любой системы — без ручных таблиц.</p>
+        {{ checks(['P&L за 6, 12 или 24 месяца с разбивкой услуг площадки',
+                   'Цена безубыточности и цена для нужной маржи',
+                   'УСН, ОСНО, самозанятый, НДС — ставки с нужного месяца',
+                   'Выгрузка в Excel в один клик для бухгалтера']) }}
+      </div>
+      <div class="lp-mock" aria-hidden="true">
+        <p class="lp-mock-title">P&amp;L по месяцам, тыс. ₽</p>
+        <table class="mk-table mk-num">
+          <thead><tr><th></th><th>Июль</th><th>Август</th><th>Сентябрь</th></tr></thead>
+          <tbody>
+            <tr><td>Реализация</td><td>1 412</td><td>1 530</td><td>1 698</td></tr>
+            <tr><td>Расходы площадки</td><td>−548</td><td>−590</td><td>−620</td></tr>
+            <tr><td>Себестоимость</td><td>−470</td><td>−498</td><td>−543</td></tr>
+            <tr><td>Налоги</td><td>−76</td><td>−82</td><td>−90</td></tr>
+            <tr class="mk-total"><td>Чистая прибыль</td><td>246</td><td>279</td><td>312</td></tr>
+          </tbody>
+        </table>
+        <p class="lp-art-note">Цифры условные</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section lp-alt">
+    <div class="lp-wrap lp-split">
+      <div>
+        <p class="lp-label">{{ icon('send', 'ico-s') }} Telegram</p>
+        <h2 class="lp-h2">Главное — прямо в телефоне</h2>
+        <p class="lp-sub">Бот присылает новые заказы и отмены, утреннюю сводку в удобное время и предупреждения, если что-то пошло не так.</p>
+        {{ checks(['Заказ с прибылью — через минуты после оформления',
+                   'Сводка за вчера: заказы, прибыль, остатки',
+                   'Предупреждения: упали заказы, выросли отмены или ДРР']) }}
+      </div>
+      <div class="lp-chat" aria-hidden="true">
+        <div class="lp-msg"><b>Новый заказ · Ozon</b>Термокружка 450 мл × 2<br>Покупатель заплатил 2 580 ₽<br>Прибыль ≈ 636 ₽</div>
+        <div class="lp-msg"><b>Сводка за вчера</b>Заказов 41 на 58 200 ₽<br>Прибыль 11 940 ₽ · маржа 20,5 %</div>
+        <div class="lp-msg lp-msg-warn"><b>Внимание</b>Коврик для йоги закончится через 3 дня</div>
+        <p class="lp-art-note">Пример сообщений</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- площадки -->
+  <section id="marketplaces" class="lp-section">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-h2-c">Три площадки — один кабинет</h2>
+      <p class="lp-sub lp-sub-c">Подключите несколько магазинов разных площадок в один аккаунт и переключайтесь между ними в шапке.
+        Везде одинаковые отчёты и одна логика расчётов.</p>
+      <div class="lp-mp-grid">
+        {% for m in all_marketplaces() %}
+        <article class="lp-mp">
+          <div class="lp-mp-head"><span class="mp-badge lg mp-{{ m.code }}">{{ m.short }}</span>
+            <div><h3>{{ m.title }}</h3>{% if m.beta %}<span class="soon-tag">бета</span>{% elif m.ready %}<span class="pill good">работает</span>{% else %}<span class="soon-tag">скоро</span>{% endif %}</div></div>
+          <p>{% if m.code == 'ozon' %}Заказы FBO и FBS, начисления, остатки, цены, реклама из кабинета Performance — год истории при подключении.
+            {% elif m.code == 'wb' %}Заказы, продажи, еженедельный отчёт о реализации, остатки и продвижение по токену «только чтение».
+            {% else %}Заказы, начисления, остатки и продвижение по Api-Key с доступом только на просмотр.{% endif %}</p>
+          <a class="lp-link" href="/help/{{ m.code }}">Как получить ключ {{ icon('arrow', 'ico-s') }}</a>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- как начать -->
+  <section id="how" class="lp-section lp-alt">
+    <div class="lp-wrap">
+      <h2 class="lp-h2 lp-h2-c">Начните за 3 шага</h2>
+      <p class="lp-sub lp-sub-c">Никаких установок — только ключ площадки с доступом на чтение.</p>
+      <div class="lp-steps">
+        <article><span class="lp-step">1</span><h3>Создайте ключ «только чтение»</h3>
+          <p>В кабинете площадки — по пошаговой <a href="/help">инструкции</a>. По такому ключу нельзя ничего изменить.</p></article>
+        <article><span class="lp-step">2</span><h3>Дождитесь загрузки</h3>
+          <p>Мы проверим, что ключ видит заказы и финансы, и сами загрузим год истории — это несколько минут.</p></article>
+        <article><span class="lp-step">3</span><h3>Смотрите и решайте</h3>
+          <p>Укажите себестоимость и налоги (можно файлом Excel) — и видите чистую прибыль. Данные обновляются сами.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- безопасность -->
+  <section id="safe" class="lp-section">
+    <div class="lp-wrap lp-split">
+      <div>
+        <h2 class="lp-h2">Безопасность</h2>
+        <p class="lp-sub">Сервис только читает данные. Мы ничего не меняем в вашем кабинете — ни цены, ни карточки, ни остатки.</p>
+      </div>
+      <ul class="lp-safe">
+        <li>{{ icon('eye') }}<div><b>Ключи только на чтение</b><span>Подойдёт ключ с ролью «только просмотр» — изменить что-либо по нему невозможно.</span></div></li>
+        <li>{{ icon('lock') }}<div><b>Хранятся зашифрованными</b><span>Ключи лежат в базе только в зашифрованном виде и нигде не показываются.</span></div></li>
+        <li>{{ icon('users') }}<div><b>Доступ только у вашей команды</b><span>Данные магазина видят люди вашего аккаунта, у каждого своя роль.</span></div></li>
+        <li>{{ icon('key') }}<div><b>Отключить — в один шаг</b><span>Удалите ключ в кабинете площадки, и доступ закроется сразу.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- вопросы -->
+  <section id="faq" class="lp-section lp-alt">
+    <div class="lp-wrap lp-faq-wrap">
+      <h2 class="lp-h2">Вопросы и ответы</h2>
+      <div class="lp-faq">
+        <details><summary>Сколько стоит?</summary><p>Сервис в разработке и проходит закрытое тестирование. Тарифы появятся перед запуском.</p></details>
+        <details><summary>Какие площадки поддерживаются?</summary><p>{% for m in all_marketplaces() %}{{ m.title }} — {{ 'бета' if m.beta else 'работает' if m.ready else 'скоро' }}{{ '; ' if not loop.last else '.' }}{% endfor %}
+          В одном аккаунте можно держать несколько магазинов разных площадок.</p></details>
+        <details><summary>Может ли сервис что-то изменить в моём кабинете?</summary><p>Нет. Мы просим ключ с доступом только на чтение: по нему площадка не даёт менять цены, карточки, остатки или рекламу.</p></details>
+        <details><summary>Откуда берутся цифры и насколько они точные?</summary><p>Из API площадки: заказы, начисления, остатки, реклама. Прибыль считается по начислениям — тем же строкам, что в финансовых отчётах кабинета. Пока начислений по свежему заказу нет, прибыль показана как оценка со значком «≈». Подробнее — в разделе <a href="/help/metrics">«Что значат цифры»</a>.</p></details>
+        <details><summary>Сколько истории загружается?</summary><p>При подключении — год (сколько отдаёт площадка), дальше данные обновляются каждые 30 минут, новые заказы — чаще.</p></details>
+        <details><summary>Можно дать доступ бухгалтеру или менеджеру?</summary><p>Да: добавьте сотрудника с ролью «только просмотр» или «администратор» и выберите, какие магазины он видит.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <div class="lp-wrap">
+      <div class="lp-final">
+        <h2>Начните видеть прибыль уже сегодня</h2>
+        <p>Подключение — несколько минут, ключ только на чтение.</p>
+        <div class="lp-cta" style="justify-content: center">
+          <a class="button primary big" href="/login">Войти в кабинет</a>
+          <a class="button big" href="/help">Открыть справку</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

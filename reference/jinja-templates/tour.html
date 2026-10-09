@@ -1,0 +1,16 @@
+{% extends "_public.html" %}
+{% block title %}Видео-знакомство · seller.bz{% endblock %}
+{% block body %}
+<main class="lp-wrap">
+  <div class="tour-page">
+    <p class="help-crumbs"><a href="/about">О сервисе</a> › Видео-знакомство</p>
+    <h1 class="lp-h2">seller.bz за одну минуту</h1>
+    <p class="lp-sub">Подключение магазина, сводка, прибыль каждого заказа и товара, реклама, остатки, P&amp;L и Telegram-бот. Цифры в ролике условные.</p>
+    <video controls playsinline preload="metadata" poster="/static/tour.jpg?v=3"><source src="/static/tour.mp4?v=3" type="video/mp4"></video>
+    <div class="lp-cta" style="margin-top: 24px">
+      <a class="button primary big" href="/login">Войти в кабинет</a>
+      <a class="button big" href="/help">Открыть справку</a>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,53 @@
+{# Меню пользователя в правом верхнем углу: кто вошёл, состояние доступа и все личные разделы. #}
+{% set u = ctx.user %}
+{% set a = access %}
+<details class="dropdown user-menu">
+  <summary class="dropdown-btn user-btn" aria-label="Меню пользователя {{ u.email }}">
+    <span class="user-ava" aria-hidden="true">{{ (u.email or '?')[0]|upper }}{% if news_unread %}<i class="user-dot"></i>{% endif %}</span>
+    <span class="user-lines">
+      {# на кнопке — название аккаунта (почта длинная и обрезалась); полная почта — внутри меню #}
+      <span class="user-mail">{{ ctx.user.account.name if ctx.user.account.name and ctx.user.account.name != u.email else u.email.split('@')[0] }}</span>
+      <span class="user-state {{ 'bad' if a and a.state == 'expired' }}">
+        {%- if not a or a.state == 'legacy' %}Мой кабинет
+        {%- elif a.state == 'trial' %}пробный период · {{ a.days_left|plural('день', 'дня', 'дней') }}
+        {%- elif a.state == 'paid' %}оплачено · {{ a.days_left|plural('день', 'дня', 'дней') }}
+        {%- else %}подписка закончилась{% endif -%}
+      </span>
+    </span>
+    {{ icon('chevron', 'ico-chevron') }}
+  </summary>
+  <div class="dropdown-panel user-panel">
+    <div class="user-panel-head">
+      <span class="user-ava lg" aria-hidden="true">{{ (u.email or '?')[0]|upper }}</span>
+      <div><b>{{ u.email }}</b><small>{{ {'owner': 'владелец', 'admin': 'администратор', 'viewer': 'только просмотр'}.get(u.role, u.role) }} · {{ ctx.user.account.name }}</small></div>
+    </div>
+    <div class="dropdown-note">Мой кабинет</div>
+    <a class="dropdown-item" href="/news">{{ icon('bell', 'ico-s') }}<span class="name">Новости</span>{% if news_unread %}<span class="count-badge">{{ news_unread }}</span>{% endif %}</a>
+    <a class="dropdown-item" href="/sync">{{ icon('refresh', 'ico-s') }}<span class="name">Синхронизация</span></a>
+    <a class="dropdown-item" href="/profile">{{ icon('user', 'ico-s') }}<span class="name">Профиль</span></a>
+    <a class="dropdown-item" href="/team">{{ icon('users', 'ico-s') }}<span class="name">Пользователи</span></a>
+    <a class="dropdown-item" href="/billing">{{ icon('wallet', 'ico-s') }}<span class="name">Оплата</span></a>
+    <a class="dropdown-item earn" href="/partners">{{ icon('coins', 'ico-s') }}<span class="name">Зарабатывайте с нами</span><span class="soon-tag">скоро</span></a>
+    <a class="dropdown-item" href="/stores">{{ icon('key', 'ico-s') }}<span class="name">Настройки и API</span></a>
+    <a class="dropdown-item" href="/notifications">{{ icon('send', 'ico-s') }}<span class="name">Настройка уведомлений</span></a>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-note">Тема оформления</div>
+    <div class="theme-grid">
+      {% for code, title, colors in themes %}
+      <button type="button" class="theme-chip{{ ' active' if code == ui_style }}" data-theme-choice="{{ code }}" aria-pressed="{{ 'true' if code == ui_style else 'false' }}" title="{{ title }}">
+        <span class="theme-swatch" aria-hidden="true">{% for c in colors %}<i style="background: {{ c }}"></i>{% endfor %}</span>
+        <span class="name">{{ title }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <div class="dropdown-sep"></div>
+    <a class="dropdown-item" href="/tour" data-tour-open>{{ icon('eye', 'ico-s') }}<span class="name">Видео-инструкции</span></a>
+    <a class="dropdown-item" href="/faq">{{ icon('help', 'ico-s') }}<span class="name">Частые вопросы</span></a>
+    <a class="dropdown-item" href="/guide">{{ icon('spark', 'ico-s') }}<span class="name">Обучающий гид</span></a>
+    <div class="dropdown-sep"></div>
+    <form method="post" action="/logout">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="dropdown-item logout-item" type="submit">{{ icon('logout', 'ico-s') }}<span class="name">Выйти</span></button>
+    </form>
+  </div>
+</details>

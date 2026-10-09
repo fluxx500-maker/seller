@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Расходы · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Операционные расходы</h1>
+    <p class="subtitle">Расходы вне {{ mp.title }}: аренда, зарплаты, сервисы. Сумма за месяц делится по дням и вычитается из чистой прибыли.
+      Повторяющиеся расходы удобно завести один раз — в «Регулярных расходах».</p>
+  </div>
+</div>
+
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <div class="month-nav">
+      <a class="button" href="/expenses?month={{ prev }}">← Назад</a>
+      <h2 style="margin: 0">{{ title }}</h2>
+      <a class="button" href="/expenses?month={{ next }}">Вперёд →</a>
+    </div>
+
+    {% if items or auto %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Статья расходов</th><th class="num">Сумма, ₽</th><th></th></tr></thead>
+        <tbody>
+        {% for id, name, amount in items %}
+          <tr>
+            <td colspan="2">
+              <form class="inline-form" method="post" action="/expenses/update">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="id" value="{{ id }}">
+                <input type="hidden" name="month" value="{{ month }}">
+                <input name="name" value="{{ name }}" maxlength="100" required aria-label="Название">
+                <input name="amount" value="{{ '%g'|format(amount) }}" inputmode="decimal" required aria-label="Сумма" style="text-align: right">
+                <button type="submit" class="sm" title="Сохранить изменения">Сохранить</button>
+              </form>
+            </td>
+            <td class="num">
+              <form method="post" action="/expenses/delete" data-question="Удалить «{{ name }}»?"
+                    onsubmit="return confirm(this.dataset.question)">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="id" value="{{ id }}">
+                <input type="hidden" name="month" value="{{ month }}">
+                <button class="link danger" type="submit" title="Удалить" aria-label="Удалить">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        {% for r in auto %}
+          <tr class="muted"><td>{{ r.name }} <span class="small">· регулярный</span></td><td class="num">{{ r.amount|num }}</td><td></td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td>Итого за месяц</td><td class="num">{{ total|num }}</td><td></td></tr>
+          <tr><td class="muted small">В день</td><td class="num muted small">{{ per_day|num }}</td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">{{ icon('coins') }}<b>Расходов за этот месяц пока нет</b><p>Добавьте первую статью ниже или перенесите статьи прошлого месяца.</p>
+      <form method="post" action="/expenses/copy">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button type="submit">Скопировать расходы прошлого месяца</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <h2 style="margin-top: 20px">Добавить расход</h2>
+    <form class="inline-form" method="post" action="/expenses/add">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input name="name" placeholder="Например, аренда склада" maxlength="100" required aria-label="Название">
+      <input name="amount" placeholder="Сумма, ₽" inputmode="decimal" required aria-label="Сумма">
+      <button class="primary" type="submit">Добавить</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Регулярные расходы</h2>
+    <p class="muted small">Попадают в каждый месяц сами. Чтобы поправить один месяц — добавьте в нём обычный расход с тем же названием.</p>
+    {% if recurring %}
+    <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Статья</th><th class="num">В месяц</th><th>Период</th><th></th></tr></thead>
+      <tbody>
+      {% for r in recurring %}
+        <tr><td>{{ r.name }}</td><td class="num">{{ r.amount|num }}</td>
+          <td class="small">с {{ r.from_month.strftime('%m.%Y') }}{% if r.until_month %} по {{ r.until_month.strftime('%m.%Y') }}{% else %}, бессрочно{% endif %}</td>
+          <td class="num"><form method="post" action="/expenses/recurring/delete" onsubmit="return confirm('Удалить регулярный расход?')">
+            <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="id" value="{{ r.id }}"><input type="hidden" name="month" value="{{ month }}">
+            <button class="link danger" type="submit" title="Удалить" aria-label="Удалить">✕</button></form></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+    <form class="recurring-form" method="post" action="/expenses/recurring/add">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="month" value="{{ month }}">
+      <input name="name" placeholder="Аренда, зарплата, фулфилмент…" maxlength="100" required aria-label="Название" list="opex-names">
+      <input name="amount" placeholder="В месяц, ₽" inputmode="decimal" required aria-label="Сумма в месяц" style="grid-column: 1 / -1">
+      <label class="small">С месяца <input type="month" name="from_month" value="{{ month }}"></label>
+      <label class="small">По месяц (необязательно) <input type="month" name="until_month" aria-label="По месяц (необязательно)"></label>
+      <button class="primary" type="submit">Добавить</button>
+      <datalist id="opex-names"><option value="Аренда склада"><option value="Зарплата"><option value="Фулфилмент"><option value="Упаковка">
+        <option value="Фотосъёмка"><option value="Внешняя реклама"><option value="Доставка до склада"><option value="Бухгалтерия"></datalist>
+    </form>
+
+    <h2 style="margin-top: 22px">По месяцам</h2>
+    {% if history %}
+    <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Месяц</th><th class="num">Статей</th><th class="num">Сумма</th></tr></thead>
+      <tbody>
+      {% for key, amount, count in history %}
+        <tr>
+          <td><a href="/expenses?month={{ key }}">{{ month_name(key) }}</a></td>
+          <td class="num">{{ count }}</td>
+          <td class="num">{{ amount|num }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="muted small">Пока ничего не внесено.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "_help_base.html" %}
+{% block help_title %}Техподдержка{% endblock %}
+{% block doc %}
+{% set c = support_contacts() %}
+<p class="help-crumbs"><a href="/help">Справка</a> › Техподдержка</p>
+<h1>Техподдержка</h1>
+<p class="lead">Ответы на частые вопросы собраны в справке — начните с них. Если ответа нет, напишите нам.</p>
+
+<h2>Написать нам</h2>
+{% if c.telegram or c.email %}
+<div class="help-cards">
+  {% if c.telegram %}<a class="help-card" href="https://t.me/{{ c.telegram }}" target="_blank" rel="noopener">{{ icon('send') }}<h3>Telegram</h3>
+    <p>@{{ c.telegram }} — быстрее всего, обычно отвечаем в течение рабочего дня.</p></a>{% endif %}
+  {% if c.email %}<a class="help-card" href="mailto:{{ c.email }}">{{ icon('file') }}<h3>Почта</h3><p>{{ c.email }}</p></a>{% endif %}
+</div>
+<div class="help-box"><b>Чтобы мы помогли быстрее</b>Напишите, какая площадка и какой раздел сервиса, и что именно не так. Никогда не присылайте
+  пароли и ключи API — они нам не нужны.</div>
+{% else %}
+<div class="help-box">Сервис проходит закрытое тестирование — контакты поддержки появятся к открытию. Пока с вопросами
+  обращайтесь к тому, кто пригласил вас в сервис.</div>
+{% endif %}
+
+<h2>Частые вопросы</h2>
+<div class="help-cards">
+  <a class="help-card" href="/help/ozon">{{ icon('key') }}<h3>Как получить ключ</h3><p>Пошагово для Ozon, Wildberries и Яндекс Маркета.</p></a>
+  <a class="help-card" href="/help/metrics">{{ icon('chart') }}<h3>Что значат цифры</h3><p>Как считаются прибыль, реализация, выкуп, ДРР и налоги.</p></a>
+  <a class="help-card" href="/tour" data-tour-open>{{ icon('eye') }}<h3>Видео-знакомство</h3><p>Что умеет сервис — за одну минуту.</p></a>
+  <a class="help-card" href="/about#faq">{{ icon('help') }}<h3>Вопросы и ответы</h3><p>Безопасность ключей, площадки, история данных.</p></a>
+</div>
+{% endblock %}

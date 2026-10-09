@@ -1,0 +1,13 @@
+{% extends "_public.html" %}
+{% block title %}{{ title }} · seller.bz{% endblock %}
+{% block body %}
+<main class="container" style="padding: 32px 16px 64px">
+  <article class="legal-doc">
+    {% if html %}{{ html }}{% else %}
+    <h1>{{ title }}</h1>
+    <p>Документ готовится и будет опубликован до открытия регистрации. Сейчас сервис работает в закрытом режиме:
+      посторонние не регистрируются, данные посетителей сайта не собираются.</p>
+    {% endif %}
+  </article>
+</main>
+{% endblock %}

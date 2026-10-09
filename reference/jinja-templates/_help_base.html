@@ -1,0 +1,26 @@
+{% extends "_public.html" %}
+{% block title %}{% block help_title %}Справка{% endblock %} · seller.bz{% endblock %}
+{% block body %}
+<main class="lp-wrap">
+  <div class="help-layout">
+    <nav class="help-toc" aria-label="Разделы справки">
+      <div class="nav-title">Справка</div>
+      <a href="/help" class="{{ 'active' if topic == '' }}">{{ icon('help') }}Все разделы</a>
+      <div class="nav-title" style="margin-top: 14px">Как получить ключ</div>
+      {% for m in all_marketplaces() %}
+      <a href="/help/{{ m.code }}" class="{{ 'active' if topic == m.code }}"><span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span>{{ m.title }}{% if not m.ready %} <span class="soon-tag">скоро</span>{% endif %}</a>
+      {% endfor %}
+      <div class="nav-title" style="margin-top: 14px">Отчёты</div>
+      <a href="/help/metrics" class="{{ 'active' if topic == 'metrics' }}">{{ icon('chart') }}Что значит каждая цифра</a>
+      <a href="/faq" class="{{ 'active' if topic == 'faq' }}">{{ icon('help') }}Частые вопросы</a>
+      <a href="/tour" data-tour-open>{{ icon('eye') }}Видео-знакомство</a>
+      <a href="/help/support" class="{{ 'active' if topic == 'support' }}">{{ icon('send') }}Техподдержка</a>
+      <a href="/partners" class="{{ 'active' if topic == 'partners' }}">{{ icon('coins') }}Зарабатывайте с нами</a>
+      {% if logged_in %}<a href="/stores/new">{{ icon('plus') }}Подключить магазин</a>{% endif %}
+    </nav>
+    <article class="help-doc">
+      {% block doc %}{% endblock %}
+    </article>
+  </div>
+</main>
+{% endblock %}

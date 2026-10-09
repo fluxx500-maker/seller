@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Магазины{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Магазины</h1>
+    <p class="subtitle">Данные обновляются сами каждые 30 минут. Первая загрузка — год истории, несколько минут.</p>
+  </div>
+  {% if ctx.can_edit %}<div class="page-actions"><a class="button primary" href="/stores/new">{{ icon('plus', 'ico-s') }}Подключить магазин</a></div>{% endif %}
+</div>
+
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+{% for r in rows %}
+{% set a = mp_of(r.store) %}
+<div class="card store-card" id="store-{{ r.store.id }}">
+  {# загрузка прошла, но какой-то раздел пустой — «частично» с пояснением #}
+  {% set empty_parts = (['остатки'] if not r.counts.stocks else []) + (['реклама'] if r.ads and not r.counts.ad_days else []) %}
+  {% set partial = r.sync.state == 'ok' and empty_parts %}
+  <div class="store-head">
+    <h2><span class="mp-badge mp-{{ r.store.marketplace }}" title="{{ a.title }}">{{ a.short }}</span>{{ r.store.name }}</h2>
+    <span class="sync-state sync-{{ 'partial' if partial else r.sync.state }}"><span class="fresh-dot fresh-{{ r.sync.fresh }}"></span>
+      {% if partial %}◐ частично ·{% elif r.sync.state == 'ok' %}✓{% elif r.sync.state == 'late' %}⌛{% elif r.sync.state == 'run' %}⟳{% elif r.sync.state == 'error' %}!{% else %}…{% endif %}
+      {{ r.sync.text }}
+    </span>
+  </div>
+  {% if partial %}
+  <p class="small warn-text partial-note">Загрузка прошла, но {{ empty_parts|join(' и ') }} {{ 'пока пустые' if empty_parts|length > 1 else 'пока пуст' ~ ('ы' if empty_parts[0] == 'остатки' else 'а') }}. {% if 'остатки' in empty_parts %}Остатков нет, если товар ещё не на складе или у ключа нет доступа к остаткам. {% endif %}{% if 'реклама' in empty_parts %}Рекламы нет, если кампаний за год не было или ключ рекламы не подходит — проверьте его в «Заменить ключи».{% endif %}</p>
+  {% endif %}
+  {% if r.sync.state == 'error' %}
+  <p class="small">Повторим {{ r.sync.next.strftime('%d.%m в %H:%M') }}{% if r.sync.ok %}. Последняя удачная загрузка — {{ r.sync.ok.strftime('%d.%m %H:%M') }}{% endif %}.</p>
+  {% endif %}
+  <p class="small muted" style="margin-bottom: 4px">
+    {{ a.title }} ·
+    {% if r.coverage[0] %}начисления загружены с {{ r.coverage[0].strftime('%d.%m.%Y') }} по {{ r.coverage[1].strftime('%d.%m.%Y') }} ({{ r.coverage[2] }} дн.).{% else %}данных ещё нет.{% endif %}
+    Реклама: {{ 'подключена' if r.ads else 'не подключена' }}.
+    {% if r.key_left is not none %}<span class="{{ 'bad' if r.key_left <= 14 else '' }}">Ключ действует ещё {{ r.key_left }} дн.{% if r.key_left <= 14 %} — замените заранее{% endif %}</span>{% endif %}
+  </p>
+  <ul class="load-steps small">
+    <li class="{{ 'done' if r.counts.orders }}">Заказы: {{ r.counts.orders|num('units0') }}</li>
+    <li class="{{ 'done' if r.counts.fin_days }}">Начисления: {{ r.counts.fin_days }} дн.</li>
+    <li class="{{ 'done' if r.counts.products }}">Каталог: {{ r.counts.products|plural('товар', 'товара', 'товаров') }}</li>
+    <li class="{{ 'done' if r.counts.stocks }}">Остатки: {{ r.counts.stocks|plural('позиция', 'позиции', 'позиций') }}</li>
+    {% if r.ads %}<li class="{{ 'done' if r.counts.ad_days }}">Реклама: {{ r.counts.ad_days }} дн.</li>{% endif %}
+  </ul>
+  {% if ctx.can_edit %}
+  <div class="store-actions">
+    <form method="post" action="/stores/{{ r.store.id }}/sync">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button type="submit">{{ icon('refresh', 'ico-s') }}Обновить сейчас</button>
+    </form>
+    <form method="post" action="/stores/{{ r.store.id }}/rename" class="inline-form" style="flex: 1 1 280px">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input name="name" value="{{ r.store.name }}" aria-label="Название" maxlength="200">
+      <button type="submit">Переименовать</button>
+    </form>
+  </div>
+  <details class="store-more">
+    <summary>Заменить ключи или подключить рекламу</summary>
+    <form method="post" action="/stores/{{ r.store.id }}/keys" autocomplete="off" style="margin-top: 10px">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <p class="muted small">Пустое поле — оставить как есть. Где взять ключи — в <a href="/help/{{ r.store.marketplace }}">справке по {{ a.title }}</a>.</p>
+      <div class="form-row">
+        {% for f in a.fields %}
+        <div><label for="k{{ r.store.id }}-{{ f.name }}">{{ f.label }}</label><input id="k{{ r.store.id }}-{{ f.name }}" name="{{ f.name }}"{% if f.secret %} type="password"{% endif %}{% if f.numeric %} inputmode="numeric"{% endif %}></div>
+        {% endfor %}
+      </div>
+      {% if a.ad_fields %}
+      <div class="form-row">
+        {% for f in a.ad_fields %}
+        <div><label for="k{{ r.store.id }}-{{ f.name }}">{{ f.label }}</label><input id="k{{ r.store.id }}-{{ f.name }}" name="{{ f.name }}"{% if f.secret %} type="password"{% endif %}{% if f.numeric %} inputmode="numeric"{% endif %}></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <button class="primary" type="submit">Проверить и сохранить</button>
+    </form>
+  </details>
+  {% if ctx.user.role == 'owner' %}
+  <details class="store-more store-extra">
+    <summary class="muted">⋯ Ещё</summary>
+    <form method="post" action="/stores/{{ r.store.id }}/delete" class="store-delete">
+      <b class="small">Удалить магазин</b>
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <p class="small danger-text">Удалятся все загруженные данные магазина, себестоимость и расходы. Отменить нельзя.
+        Введите название магазина «{{ r.store.name }}», чтобы подтвердить.</p>
+      <div class="inline-form">
+        <input name="confirm" aria-label="Название для подтверждения" required>
+        <button class="danger" type="submit">Удалить навсегда</button>
+      </div>
+    </form>
+  </details>
+  {% endif %}
+  {% endif %}
+</div>
+{% else %}
+<div class="card"><div class="empty">{{ icon('store') }}<b>Магазинов пока нет</b><p>Подключите кабинет Ozon, Wildberries или Яндекс Маркета по ключу «только чтение».</p>
+  {% if ctx.can_edit %}<a class="button primary" href="/stores/new">Подключить магазин</a>{% endif %}</div></div>
+{% endfor %}
+
+{% if ctx.can_edit %}
+<div class="card">
+  <h2>Подключить ещё один кабинет</h2>
+  <p class="muted small">Несколько магазинов и площадок в одном аккаунте — переключаются в шапке.</p>
+  <div class="connect-strip">
+    {% for m in all_marketplaces() %}
+    <a class="mp-link" href="/stores/new?mp={{ m.code }}"><span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span>{{ m.title }}{% if not m.ready %} <span class="soon-tag">скоро</span>{% endif %}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

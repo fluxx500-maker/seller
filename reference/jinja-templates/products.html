@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Товары · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/products", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Товары</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m') }} – {{ until.strftime('%d.%m.%Y') }} · по начислениям {{ mp.title }} · {{ rows|length|plural('товар', 'товара', 'товаров') }}</p>
+  </div>
+  <div class="page-actions">
+    <details class="columns-pick">
+      <summary class="button">{{ icon('sliders', 'ico-s') }}Колонки{% if hidden %} ({{ columns|length }} из {{ all_columns|length }}){% endif %}</summary>
+      <form method="post" action="/products/columns" class="columns-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="back" value="/products?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">
+        <div class="columns-grid">
+          {% for key, title, fmt in all_columns %}<label><input type="checkbox" name="col" value="{{ key }}" {{ '' if key in hidden else 'checked' }}> {{ title }}</label>{% endfor %}
+        </div>
+        {% if ctx.can_edit %}<button type="submit" class="primary">Сохранить</button> <button type="submit" name="reset" value="1">Как было по умолчанию</button>{% else %}<p class="muted small">Менять колонки может владелец или администратор.</p>{% endif %}
+      </form>
+    </details>
+    <a class="button" title="Все товары за выбранный период; поиск и быстрые фильтры не применяются к выгрузке" href="/products.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Excel за период</a>
+    {% if hidden %}<a class="small" href="/products.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}&cols=all">все колонки</a>{% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="filter-buttons" data-tag-buttons="#products" aria-label="Быстрые фильтры">
+    {% macro fbtn(x) %}<button type="button" class="fbtn fbtn-{{ x.key }}{{ ' on' if x.key in selected }}" data-tag="{{ x.key }}" aria-pressed="{{ 'true' if x.key in selected else 'false' }}" title="{{ x.hint }}">{{ x.label }} <b>{{ x.count }}</b></button>{% endmacro %}
+    {# первые пять — главные, остальные — под «Ещё» (кнопки остаются внутри [data-tag-buttons], table.js их видит) #}
+    {% set main_keys = ['loss', 'nocost', 'ends14', 'out', 'ads'] %}
+    {% for x in filters if x.key in main_keys and (x.count or x.key in selected) %}{{ fbtn(x) }}{% endfor %}
+    {% set more = [] %}{% for x in filters if x.key not in main_keys and (x.count or x.key in selected) %}{% set _ = more.append(x) %}{% endfor %}
+    {% if more %}
+    <details class="fmore"{% if more|selectattr('key', 'in', selected)|list %} open{% endif %}>
+      <summary class="fbtn">Ещё ▾</summary>
+      <div class="fmore-list">{% for x in more %}{{ fbtn(x) }}{% endfor %}</div>
+    </details>
+    {% endif %}
+  </div>
+  <div class="toolbar">
+    <input type="search" data-filter="#products" placeholder="Поиск по названию, артикулу, бренду" aria-label="Поиск">
+    {% set brands = rows|map(attribute='brand')|select|unique|sort|list %}
+    {% if brands|length > 1 %}
+    <select data-brand-filter aria-label="Бренд">
+      <option value="">Все бренды</option>
+      {% for b in brands %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <span class="muted small" data-filter-count></span>
+  </div>
+  {% if rows %}
+  <div class="table-wrap products-wrap">
+    <table id="products" class="products sortable">
+      <thead>
+        <tr>
+          <th data-sort>Товар</th>
+          {% for key, title, fmt in columns %}<th class="num" data-sort{% if fmt == "text" %} title="Первая буква — по прибыли, вторая — по выручке. A — первые 80 %, B — следующие 15 %, C — остальные"{% endif %}>{{ title }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for p in rows %}
+        <tr data-tags="{{ p.tags|join(' ') }}" data-brand="{{ p.brand or '' }}" data-raw='{{ {"sold": p.sold, "returned": p.returned, "sale_gross": p.sale_gross, "sale": p.get("sale"), "profit": p.profit, "stock": p.stock, "per_day": p.per_day, "lost_per_day": p.lost_per_day, "lost_revenue": p.lost_revenue, "paid": p.paid, "commission_abs": p.commission_abs, "logistics": p.logistics, "ads": p.ads, "other_services": p.other_services, "accrued": p.accrued, "cogs": p.cogs, "taxes": p.taxes, "storage": p.storage, "no_cost": p.no_cost}|tojson }}'>
+          <td data-v="" class="with-thumb">
+            {% if p.image %}<img class="thumb" src="{{ p.image }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% endif %}
+            <a class="one-line" title="{{ p.name }}" href="/product?offer={{ p.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ p.name }}</a>
+            <div class="muted small"><code>{{ p.offer_id }}</code><span class="prod-extra">{% if p.brand %} · {{ p.brand }}{% endif %}{% if p.category %} · {{ p.category }}{% endif %}</span>{% if p.no_cost %} · <span class="bad">нет себестоимости</span>{% endif %}{% if p.loss %} · <span class="bad">в минусе</span>{% endif %}{% if p.illiquid %} · <span class="warn-text" title="{% if p.per_day %}На складе {{ p.stock|num('units') }}, при скорости продаж за последние 4 недели запаса хватит {{ p.days_left|num('days') }}{% else %}На складе {{ p.stock|num('units') }}, а за последние 4 недели продаж не было{% endif %} — прибыльность товара на эту пометку не влияет">низкая оборачиваемость</span>{% endif %}</div>
+            {% if p.no_cost and ctx.can_edit %}
+            <form class="inline-cost" method="post" action="/costs/set">
+              <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="offer_id" value="{{ p.offer_id }}">
+              <input type="hidden" name="back" value="/products?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">
+              <input name="cost" inputmode="decimal" placeholder="Себестоимость, ₽" aria-label="Себестоимость за штуку" required>
+              <button type="submit">OK</button>
+            </form>
+            {% endif %}
+          </td>
+          {% for key, title, fmt in columns %}
+          {% set v = p.get(key) %}
+          {% if fmt == 'index' %}<td class="num" data-v="{{ {'SUPER': 1, 'GREEN': 2, 'YELLOW': 3, 'RED': 4}.get(v, '') }}">{% if v %}<span class="pidx pidx-{{ v }}" title="Индекс цен площадки{% if p.index_value %}: {{ p.index_value }}{% endif %}">{{ index_titles[v] }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>{% elif fmt == 'text' %}<td class="num" data-v="" title="Первая буква — по прибыли, вторая — по выручке"><span class="abc abc-{{ p.abc_profit }}">{{ v }}</span></td>{% else %}
+          <td class="num {{ 'neg' if key in ('profit', 'margin', 'roi', 'profit_per_unit') and v is not none and v < 0 }}" data-v="{{ (p.days_left if key == 'ends_at' else v) if (p.days_left if key == 'ends_at' else v) is not none else '' }}">{% if key in ('turnover', 'days_left', 'ends_at') and p.stock == 0 %}<span class="bad">нет в наличии</span>{% else %}{{ v|num(fmt) }}{% endif %}{% if key == 'orders_coinvest' and v is not none %} <span class="muted small">({{ p.orders_coinvest_n|num('orders') }})</span>{% endif %}</td>{% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        {# одна итоговая строка — ровно сумма товаров на экране (как «Итого на экране» у «Я Селлер» и «Итого по товарам»
+           у MPStats); считает table.js: без фильтра — все товары, с фильтром — отобранные. Доли — из сумм. #}
+        <tr class="row-selected" data-sum-row data-sum-all="{{ rows|length }}">
+          <td><span data-sum-label>Итого по всем товарам ({{ rows|length }})</span><div class="muted small">сумма строк таблицы</div></td>
+          {% for key, title, fmt in columns %}<td class="num" data-sum-key="{{ key }}" data-sum-fmt="{{ fmt }}"></td>{% endfor %}
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{{ icon('box') }}<b>Товаров с продажами за период нет</b><p>Выберите период побольше в шапке. Если магазин подключён недавно — данные ещё загружаются, загляните в «<a href="/stores">Магазины</a>».</p></div>
+  {% endif %}
+</div>
+
+{% if rows %}
+{# как из прибыли товаров получается прибыль магазина — одной понятной формулой (итог = «Чистая прибыль» на Сводке) #}
+{% set goods = rows|sum(attribute='profit') %}
+{% set net = totals.profit - (totals.opex or 0) %}
+{% set part_names = {'group:ads': 'Реклама без привязки к товару (продвижение в поиске, баннеры, бонусы продавца, рассылки)',
+                     'group:subscriptions': 'Подписки площадки', 'group:logistics': 'Логистика без товара (кросс-докинг, обработка поставок)',
+                     'group:storage': 'Хранение без товара', 'group:acquiring': 'Эквайринг без товара', 'group:penalties': 'Штрафы',
+                     'group:finance': 'Досрочные выплаты', 'group:compensation': 'Компенсации площадки',
+                     'group:other': 'Прочие услуги без товара', 'unparsed': 'Нераспознанные начисления'} %}
+<div class="card profit-bridge-card">
+  <h2>Как из прибыли товаров получается прибыль магазина</h2>
+  <div class="profit-bridge">
+    <div class="pb-item"><span>Прибыль всех товаров ({{ rows|length }})</span><b class="{{ 'neg' if goods < 0 }}">{{ goods|num('rub') }}</b></div>
+    <div class="pb-op">{{ '−' if totals.unassigned <= 0 else '+' }}</div>
+    <div class="pb-item"><span>Расходы без привязки к товару</span><b>{{ (totals.unassigned|abs)|num('rub') }}</b></div>
+    {% if totals.opex %}<div class="pb-op">−</div>
+    <div class="pb-item"><span>Операционные расходы</span><b>{{ totals.opex|num('rub') }}</b></div>{% endif %}
+    <div class="pb-op">=</div>
+    <div class="pb-item pb-total"><span>Прибыль магазина</span><b class="{{ 'neg' if net < 0 }}">{{ net|num('rub') }}</b>
+      <a class="small" href="/?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">как на Сводке →</a></div>
+  </div>
+  {% if totals.unassigned_parts %}
+  <details class="explain"><summary>Из чего складываются расходы без привязки к товару</summary>
+    <ul class="pb-parts">{% for key, value in totals.unassigned_parts %}
+      <li><span>{{ part_names.get(key, key) }}</span><b>{{ value|num('rub') }}</b></li>{% endfor %}</ul>
+    <p class="muted small">Площадка списывает эти деньги на магазин целиком, а не на конкретный товар, поэтому их нет в строках таблицы.
+      Реклама кампаний, которую площадка разнесла по товарам, уже вычтена из прибыли товаров{% if store and store.marketplace == 'ozon' %}
+      (по отчёту Ozon о расходе на каждый товар; оплаченное рекламными бонусами не считается){% endif %}.</p>
+  </details>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

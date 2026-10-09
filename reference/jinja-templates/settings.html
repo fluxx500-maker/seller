@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Настройки налогов · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Настройки налогов</h1>
+    <p class="subtitle">Из налогов и себестоимости считается чистая прибыль. Настройки свои у каждого магазина.</p>
+  </div>
+</div>
+
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Налоги</h2>
+    <form method="post" action="/settings/tax">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="field">
+        <label for="regime">Система налогообложения</label>
+        <select id="regime" name="tax_regime">
+          {% for key, (title, rate) in regimes.items() %}<option value="{{ key }}" data-rate="{{ rate }}" {{ 'selected' if s.tax_regime == key }}>{{ title }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div><label for="usn">Ставка налога, %</label>
+          <input id="usn" name="usn_rate" value="{{ s.usn_rate }}" inputmode="decimal" style="width: 120px" required></div>
+        <div><label for="vat">НДС, %</label>
+          <input id="vat" name="vat_rate" value="{{ s.vat_rate }}" inputmode="decimal" style="width: 120px" required></div>
+      </div>
+      <fieldset style="border: none; padding: 0; margin: 0 0 8px">
+        <legend class="small muted" style="padding: 0; margin-bottom: 6px; font-weight: 500">Доход для налога</legend>
+        {% for key, text in bases.items() %}
+        <label class="check" style="margin-top: 6px"><input type="radio" id="base-{{ key }}" name="tax_base" value="{{ key }}" {{ 'checked' if s.tax_base == key }}> {{ text[0]|upper ~ text[1:] }}</label>
+        {% endfor %}
+      </fieldset>
+      <details class="explain" style="margin: 8px 0 14px"><summary>Как считаем</summary>
+        <p>НДС выделяется из дохода: доход × ставка ÷ (100 + ставка). УСН «Доходы» — с дохода без НДС.
+          УСН «Доходы минус расходы» и налог на прибыль при ОСНО — с дохода без НДС минус комиссия, услуги площадки
+          себестоимость, реклама и операционные расходы — один раз на весь магазин, по товарам раскладывается по доле дохода. Самозанятый — ставка от дохода, без НДС. Минимальный налог 1 % и перенос убытков
+          прошлых лет не учитываются — это делает ваш бухгалтер в декларации.</p></details>
+      <button class="primary" type="submit">Сохранить</button>
+    </form>
+
+    <hr>
+    <h2>Ставки менялись в течение года?</h2>
+    <p class="muted small">Например, НДС вырос с 5 до 7 %, когда оборот превысил порог, или вы перешли на другую систему.
+      Прошлые месяцы считаются по прежним ставкам, с указанного месяца — по новым.</p>
+    {% if periods %}
+    <div class="table-wrap" style="margin-bottom: 12px">
+    <table class="data">
+      <thead><tr><th>С месяца</th><th>Система</th><th class="num">Ставка</th><th class="num">НДС</th><th></th></tr></thead>
+      <tbody>{% for p in periods %}
+        <tr><td>{{ p.from[5:7] }}.{{ p.from[:4] }}</td><td>{{ regimes.get(p.tax_regime, regimes['usn_income'])[0] }}</td>
+          <td class="num">{{ p.usn_rate }} %</td><td class="num">{{ p.vat_rate }} %</td>
+          <td class="num"><form method="post" action="/settings/tax-period"><input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="month" value="{{ p.from }}"><button class="link danger" name="delete" value="1" title="Удалить" aria-label="Удалить">✕</button></form></td></tr>
+      {% endfor %}</tbody>
+    </table>
+    </div>
+    {% endif %}
+    <form class="form-row" method="post" action="/settings/tax-period">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div><label for="tp-month">С месяца</label><input id="tp-month" type="month" name="month" required></div>
+      <div><label for="tp-regime">Система</label><select id="tp-regime" name="tax_regime">{% for key, (title, rate) in regimes.items() %}<option value="{{ key }}" {{ 'selected' if s.tax_regime == key }}>{{ title }}</option>{% endfor %}</select></div>
+      <div><label for="tp-usn">Ставка, %</label><input id="tp-usn" name="usn_rate" value="{{ s.usn_rate }}" inputmode="decimal" style="width: 90px"></div>
+      <div><label for="tp-vat">НДС, %</label><input id="tp-vat" name="vat_rate" value="{{ s.vat_rate }}" inputmode="decimal" style="width: 90px"></div>
+      <input type="hidden" name="tax_base" value="{{ s.tax_base }}">
+      <button type="submit">Добавить</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Себестоимость</h2>
+    <p>Загружено товаров: <b>{{ costs_count }}</b></p>
+    <form method="post" action="/settings/costs" enctype="multipart/form-data"
+          onsubmit="return !this.replace.checked || confirm('Удалить всю прежнюю себестоимость и оставить только цены из файла?')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="file">Файл Excel с колонками «Артикул продавца», «Себестоимость», «Фулфилмент» (и «Действует с», если цена менялась). <a href="/settings/costs.xlsx">Скачать образец</a> — в нём ваша текущая себестоимость, её можно поправить и загрузить обратно.</label>
+      <div class="inline-form">
+        <input id="file" type="file" name="file" accept=".xlsx" required>
+        <button class="primary" type="submit">Загрузить</button>
+      </div>
+      <label class="check danger-check">
+        <input type="checkbox" name="replace" value="1"> Заменить всю себестоимость (удалить прежние цены, которых нет в файле)
+      </label>
+      <p class="muted small" style="margin-top: 6px">Без галочки строки из файла добавляются к истории: цены с другими датами сохраняются.</p>
+    </form>
+    <div class="page-actions" style="margin-bottom: 8px">
+
+      <a class="button" href="/costs">Изменить по товарам и партиям →</a>
+    </div>
+
+    {% if missing %}
+    <h2 style="margin-top: 20px">Нет себестоимости</h2>
+    <p class="muted small">Товары, проданные за последний год без себестоимости — прибыль по ним завышена.</p>
+    <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Артикул</th><th>Название</th><th class="num">Продано</th></tr></thead>
+      <tbody>
+      {% for offer, qty, name in missing %}
+        <tr><td><code>{{ offer }}</code></td><td class="small" style="white-space: normal">{{ name }}</td><td class="num">{{ qty }} шт.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="notice ok" style="margin-top: 12px">У всех товаров, проданных за последний год, себестоимость есть.</div>
+    {% endif %}
+  </div>
+</div>
+<script>
+  // при смене системы подставить обычную ставку
+  document.getElementById("regime")?.addEventListener("change", (e) => {
+    const rate = e.target.selectedOptions[0].dataset.rate;
+    if (rate !== undefined) document.getElementById("usn").value = rate;
+  });
+</script>
+{% endblock %}

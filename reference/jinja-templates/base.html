@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ru" data-style="{{ ui_style }}"{% if ui_mode %} data-mode="{{ ui_mode }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{{ store.name if store else 'Кабинет' }}{% endblock %} · seller.bz</title>
+  <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css?v=64">
+  <link rel="stylesheet" href="/static/themes.css?v=13">
+  <link rel="stylesheet" href="/static/studio.css?v=6">
+  <link rel="stylesheet" href="/static/pane-layout.css?v=4">
+  <script src="/static/reveal-init.js?v=8"></script>
+  <script src="/static/app.js?v=16" defer></script>
+  <script src="/static/charts.js?v=7" defer></script>
+  <script src="/static/tiles.js?v=6" defer></script>
+  <script src="/static/split.js?v=2" defer></script>
+</head>
+{# pane — страница во второй половине экрана (кнопка «+» у пункта меню): без меню и шапки, только рабочая область
+   со своим периодом и магазином. data-* — чтобы «поменять половины местами» перенёс и период, и магазин #}
+<body class="app-shell{{ ' pane-body' if pane }}" data-store="{{ store.id if store else '' }}"{% if since is defined and until is defined and active is defined %} data-since="{{ since.isoformat() }}" data-until="{{ until.isoformat() }}" data-active="{{ active }}"{% endif %}>
+  {% macro split_btn(href, label) %}<button type="button" class="nav-split" data-split="{{ href }}" title="Открыть во второй половине экрана" aria-label="Открыть «{{ label }}» во второй половине экрана">{{ icon('split', 'ico-s') }}</button>{% endmacro %}
+  {# страницы аккаунта (меню пользователя) — не про выбранный магазин: его сводка не подсвечивается, рамка приглушена #}
+  {% set account_page = path.startswith(('/team', '/profile', '/notifications', '/sync', '/guide', '/news', '/partners', '/billing', '/stores', '/admin')) %}
+  {% set nav_groups = [
+    ("Разделы",
+                [("/orders", "Заказы", "orders", path.startswith("/orders")),
+                 ("/products", "Товары", "box", path.startswith("/product")),
+                 ("/charts", "Графики", "chart", path.startswith("/charts"))]),
+    ("Отчёты", [("/weekly", "По неделям", "file", path.startswith("/weekly")),
+                ("/pnl", "P&L", "table", path.startswith("/pnl")),
+                ("/money", "Деньги", "wallet", path.startswith("/money")),
+                ("/funnel", "Воронка", "sliders", path.startswith("/funnel")),
+                ("/coinvest", "Соинвест" if mp.code == "ozon" else mp.term('coinvest'), "percent", path.startswith("/coinvest")),
+                ("/ads", "Реклама", "megaphone", path.startswith("/ads")),
+                ("/geo", "География", "pin", path.startswith("/geo"))]),
+    ("Инструменты", [("/unit", "Юнит-экономика", "calc", path.startswith("/unit")),
+                     ("/supply", "Расчёт поставки", "truck", path.startswith("/supply")),
+                     ("/costs", "Себестоимость", "tag", path.startswith("/costs")),
+                     ("/expenses", "Расходы", "coins", path.startswith("/expenses")),
+                     ("/settings", "Настройки налогов", "percent", path.startswith("/settings"))]),
+  ] if store else [] %}
+  {% if not pane %}
+  <aside class="sidebar" id="sidebar" aria-label="Меню кабинета">
+    <button type="button" class="icon-btn nav-dismiss" data-menu-close aria-label="Закрыть меню">×</button>
+    <a class="sidebar-brand" href="{{ '/all' if store else '/' }}" title="Общая сводка">{% include "_brand.html" %}</a>
+    <nav class="sidebar-nav">
+      {% if store %}
+      {# сводки: общая по всем магазинам и отдельная по каждому магазину; щелчок переключает кабинет на этот магазин #}
+      <div class="nav-group">
+        <div class="nav-title">Сводки</div>
+        <div class="nav-row"><a class="nav-link{{ ' active' if path.startswith('/all') }}" href="/all"{% if path.startswith('/all') %} aria-current="page"{% endif %}>{{ icon('spark') }}<span>Общая сводка</span></a>{{ split_btn('/all', 'Общая сводка') }}</div>
+        {% for m in all_marketplaces() %}
+        {% set own = ctx.stores | selectattr('marketplace', 'equalto', m.code) | list %}
+        {% for x in own %}
+        {% set on = path == '/' and x.id == store.id %}
+        <div class="nav-row"><a class="nav-link nav-mp{{ ' active' if on }}{{ ' is-current' if x.id == store.id and not path.startswith('/all') and not account_page }}" href="/summary/{{ x.id }}"{% if on %} aria-current="page"{% endif %}>
+          <span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span><span>Сводка {{ 'Ozon' if m.code == 'ozon' else m.short }}{% if own|length > 1 %} <small class="muted">· {{ x.name }}</small>{% endif %}</span></a>{{ split_btn('/summary/' ~ x.id, 'Сводка ' ~ ('Ozon' if m.code == 'ozon' else m.short)) }}</div>
+        {% else %}
+        {% if ctx.can_edit %}
+        <a class="nav-link nav-mp is-empty" href="/stores/new?mp={{ m.code }}" title="{{ m.title }} не подключён — подключить">
+          <span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span><span>Сводка {{ 'Ozon' if m.code == 'ozon' else m.short }}</span>{{ icon('plus', 'ico-s nav-plus') }}</a>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if store %}
+      {# рамка выбранного магазина: всё внутри показывает данные именно этого магазина — цвет площадки, заголовок с названием #}
+      <section class="nav-scope scope-{{ store.marketplace }}{{ ' is-dim' if account_page }}" aria-label="Разделы магазина {{ store.name }}">
+        <div class="nav-scope-head">
+          <span class="mp-badge mp-{{ store.marketplace }}">{{ mp.short }}</span>
+          <div><b>{{ mp.title }}</b><small>{{ store.name }}</small></div>
+        </div>
+        {% for group, links in nav_groups %}
+        <div class="nav-group">
+          <div class="nav-title">{{ group }}</div>
+          {% for href, label, ico, on in links %}
+          <div class="nav-row"><a class="nav-link{{ ' active' if on }}" href="{{ href }}"{% if on %} aria-current="page"{% endif %}>{{ icon(ico) }}<span>{{ label }}</span></a>{{ split_btn(href, label) }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {# магазины, пользователи, оплата — в меню пользователя (правый верхний угол) #}
+    </nav>
+    <div class="sidebar-foot">
+      {% if is_admin %}<a class="nav-link{{ ' active' if path.startswith('/admin') }}" href="/admin">{{ icon('shield') }}<span>Служебная: все клиенты</span></a>{% endif %}
+      {# свернуть меню до значков (только на компьютере); положение помнит браузер — reveal-init.js ставит класс до отрисовки #}
+      <button type="button" class="nav-link nav-collapse" data-nav-mini aria-pressed="false">{{ icon('chevron', 'nav-collapse-ico') }}<span>Свернуть меню</span></button>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" data-menu-close></div>
+  {% endif %}
+
+  <div class="app-main">
+    <header class="topbar">
+      {% if not pane %}<button type="button" class="icon-btn menu-btn" data-menu-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Меню">{{ icon('menu') }}</button>{% endif %}
+      {% if store and pane %}
+      {% set section = namespace(href='/', label='Сводка магазина', ico='store') %}
+      {% if path.startswith('/all') %}{% set section.href = '/all' %}{% set section.label = 'Общая сводка' %}{% set section.ico = 'spark' %}{% endif %}
+      {% for group, links in nav_groups %}{% for href, label, ico, on in links %}{% if on %}
+        {% set section.href = href %}{% set section.label = label %}{% set section.ico = ico %}
+      {% endif %}{% endfor %}{% endfor %}
+      {% macro pane_url(href, store_id) -%}
+        {{ href }}?pane=1&amp;ps={{ store_id }}{% if active is defined and active != 'custom' %}&amp;preset={{ active|urlencode }}{% elif active is defined and active == 'custom' and since is defined and until is defined %}&amp;date_from={{ since.isoformat() }}&amp;date_to={{ until.isoformat() }}{% endif %}
+      {%- endmacro %}
+      <details class="dropdown store-menu pane-store-menu">
+        <summary class="dropdown-btn" aria-label="Магазин во второй панели: {{ store.name }}">
+          <span class="mp-badge mp-{{ store.marketplace }}" title="{{ mp.title }}">{{ mp.short }}</span>
+          <span class="label">{{ store.name }}</span>{{ icon('chevron', 'ico-chevron') }}
+        </summary>
+        <div class="dropdown-panel">
+          <div class="dropdown-note">Маркетплейс и магазин</div>
+          {% for m in all_marketplaces() %}
+          {% for x in ctx.stores if x.marketplace == m.code %}
+          <a class="dropdown-item{{ ' active' if x.id == store.id }}" href="{{ pane_url(section.href, x.id) }}"{% if x.id == store.id %} aria-current="true"{% endif %}>
+            <span class="mp-badge mp-{{ m.code }}">{{ m.short }}</span>
+            <span class="pane-store-name"><span>{{ x.name }}</span><small>{{ m.title }}</small></span>
+            {% if x.id == store.id %}<span class="check">{{ icon('check', 'ico-s') }}</span>{% endif %}
+          </a>
+          {% endfor %}{% endfor %}
+        </div>
+      </details>
+      <details class="dropdown pane-section-menu">
+        <summary class="dropdown-btn" aria-label="Раздел во второй панели: {{ section.label }}">
+          {{ icon(section.ico, 'ico-s') }}<span class="label">{{ section.label }}</span>{{ icon('chevron', 'ico-chevron') }}
+        </summary>
+        <nav class="dropdown-panel" aria-label="Разделы второй панели">
+          <div class="dropdown-note">Сводки</div>
+          {% for href, label, ico in [('/', 'Сводка магазина', 'store'), ('/all', 'Общая сводка', 'spark')] %}
+          <a class="dropdown-item{{ ' active' if section.href == href }}" href="{{ pane_url(href, store.id) }}"{% if section.href == href %} aria-current="page"{% endif %}>{{ icon(ico, 'ico-s') }}<span>{{ label }}</span></a>
+          {% endfor %}
+          {% for group, links in nav_groups %}
+          <div class="dropdown-note">{{ group }}</div>
+          {% for href, label, ico, on in links %}
+          <a class="dropdown-item{{ ' active' if on }}" href="{{ pane_url(href, store.id) }}"{% if on %} aria-current="page"{% endif %}>{{ icon(ico, 'ico-s') }}<span>{{ label }}</span></a>
+          {% endfor %}{% endfor %}
+        </nav>
+      </details>
+      {% block period %}{% endblock %}
+      {% elif store %}
+      <details class="dropdown store-menu">
+        <summary class="dropdown-btn" aria-label="Магазин: {{ store.name }}">
+          <span class="mp-badge mp-{{ store.marketplace }}" title="{{ mp.title }}">{{ mp.short }}</span>
+          <span class="label">{{ store.name }}</span>
+          {{ icon('chevron', 'ico-chevron') }}
+        </summary>
+        <div class="dropdown-panel">
+          <form method="post" action="/stores/switch">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <div class="dropdown-note">Магазины</div>
+            {% for x in ctx.stores %}
+            <button type="submit" name="store_id" value="{{ x.id }}" class="dropdown-item{{ ' active' if x.id == store.id }}">
+              <span class="mp-badge mp-{{ x.marketplace }}">{{ mp_of(x).short }}</span><span class="name">{{ x.name }}</span>
+              {% if x.id == store.id %}<span class="check">{{ icon('check', 'ico-s') }}</span>{% endif %}
+            </button>
+            {% endfor %}
+          </form>
+          <div class="dropdown-sep"></div>
+          <a class="dropdown-item" href="/stores">{{ icon('store', 'ico-s') }}Магазины и загрузка</a>
+          {% if ctx.can_edit %}<a class="dropdown-item" href="/stores/new">{{ icon('plus', 'ico-s') }}Подключить Ozon, Wildberries или Яндекс Маркет</a>{% endif %}
+        </div>
+      </details>
+      {{ self.period() }}
+      {% else %}
+      <a class="sidebar-brand" href="/stores" style="padding: 0; height: auto">{% include "_logo.html" %}<span>Кабинет</span></a>
+      {% endif %}
+      <span class="topbar-spacer"></span>
+      {% if not pane %}
+      {% include "_mode_switch.html" %}
+      {% if not ctx %}{% include "_theme_switch.html" %}{% endif %}
+      <a class="icon-btn help-link" href="/help" title="Справка">{{ icon('help') }}<span class="help-text">Справка</span></a>
+      {% if ctx %}{% include "_user_menu.html" %}{% else %}
+      <form method="post" action="/logout" class="logout">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="icon-btn" type="submit" title="Выйти">{{ icon('logout') }}<span class="logout-text">Выйти</span></button>
+      </form>{% endif %}
+      {% endif %}
+    </header>
+    <main class="main" id="main-content" tabindex="-1">
+      {% if verify_needed %}
+      <div class="notice warn"><span>Подтвердите почту {{ ctx.user.email }} — ссылка в письме от seller.bz.</span>
+        <form method="post" action="/verify/resend" class="inline"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="link" type="submit">Отправить письмо ещё раз</button></form></div>
+      {% endif %}
+      {% if billing_on and access and access.state == 'expired' %}
+      <div class="notice error"><span>Подписка закончилась. Данные сохранены — <a href="/billing">продлите подписку</a>, чтобы видеть и обновлять их.</span></div>
+      {% elif billing_on and access and access.state == 'trial' and access.days_left is not none and access.days_left <= 3 %}
+      <div class="notice warn"><span>Пробный период заканчивается через {{ access.days_left }} дн. — <a href="/billing">выбрать тариф</a>.</span></div>
+      {% endif %}
+      {% if ctx and not ctx.can_edit and request.query_params.get('error') == 'role' %}
+      <div class="notice warn">У вас доступ «только просмотр» — изменения может вносить владелец или администратор.</div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+  {% if not pane %}{% include "_tour_dialog.html" %}{% endif %}
+</body>
+</html>

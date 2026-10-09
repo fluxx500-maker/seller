@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru" data-style="{{ ui_style }}"{% if ui_mode %} data-mode="{{ ui_mode }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}seller.bz{% endblock %}</title>
+  <meta name="description" content="{% block description %}Аналитика для продавцов Ozon, Wildberries и Яндекс Маркета: прибыль по каждому заказу и товару, юнит-экономика, P&L, реклама, остатки и налоги.{% endblock %}">
+  <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css?v=64">
+  <link rel="stylesheet" href="/static/themes.css?v=13">
+  <link rel="stylesheet" href="/static/studio.css?v=6">
+  <link rel="stylesheet" href="/static/landing.css?v=17">
+  <script src="/static/reveal-init.js?v=8"></script>
+  <script src="/static/app.js?v=16" defer></script>
+</head>
+<body class="lp">
+  <header class="lp-header">
+    <div class="lp-wrap lp-header-inner">
+      <a class="lp-brand" href="/">{% include "_brand.html" %}</a>
+      <nav class="lp-nav" aria-label="Разделы">
+        {% block nav %}
+        <a href="/about#features">Возможности</a>
+        <a href="/about#marketplaces">Площадки</a>
+        <a href="/about#safe">Безопасность</a>
+        <a href="/about#faq">Вопросы</a>
+        {% endblock %}
+        <a href="/help"{% if request.url.path.startswith('/help') %} class="active"{% endif %}>Справка</a>
+      </nav>
+      <div class="lp-actions">
+        {% include "_mode_switch.html" %}
+        {% include "_theme_switch.html" %}
+        {% if request.session.get('user_id') %}
+        <a class="button primary" href="/all">В кабинет</a>
+        {% else %}
+        {% if signup_open %}<a class="button ghost lp-hide-s" href="/signup">Регистрация</a>{% endif %}
+        <a class="button primary" href="/login">Войти</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% block body %}{% endblock %}
+
+  <footer class="lp-footer">
+    <div class="lp-wrap lp-footer-inner">
+      <div>
+        <a class="lp-brand" href="/">{% include "_brand.html" %}</a>
+        <p class="muted small" style="margin-top: 10px">Для продавцов Ozon, Wildberries и Яндекс Маркета. Сервис в разработке.</p>
+      </div>
+      <nav class="lp-footer-nav" aria-label="Ссылки">
+        <a href="/about">О сервисе</a>
+        <a href="/help">Справка</a>
+        <a href="/help/metrics">Что значат цифры</a>
+        {% if request.session.get("user_id") %}<a href="/all">Кабинет</a>{% else %}<a href="/login">Вход</a>{% endif %}
+      </nav>
+    </div>
+  </footer>
+  {% include "_tour_dialog.html" %}
+</body>
+</html>

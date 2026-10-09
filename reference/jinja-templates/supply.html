@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Поставка · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Расчёт поставки</h1>
+    <p class="subtitle">Сколько штук везти, чтобы хватило на выбранный срок. Скорость — заказы без отмен за 28 дней, считая только дни,
+      когда товар был в наличии.</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/supply.xlsx?days={{ days }}&growth={{ growth|round(0)|int }}&safety={{ safety }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+<form class="card supply-form" method="get" action="/supply">
+  <label>На сколько дней везём<input name="days" value="{{ days }}" inputmode="numeric"></label>
+  <label>Рост продаж, %<input name="growth" value="{{ growth|round(0)|int }}" inputmode="decimal"></label>
+  <label>Запас сверху, дней<input name="safety" value="{{ safety }}" inputmode="numeric"></label>
+  <button class="primary" type="submit">Посчитать</button>
+</form>
+<section class="order-totals">
+  <div><span class="muted small">Везти всего</span><b>{{ total.need|num('units') }}</b><span class="muted small">{{ rows|selectattr('need')|list|length|plural('товар', 'товара', 'товаров') }}</span></div>
+  <div><span class="muted small">Сумма закупки</span><b>{{ total.need_cost|num('rub') }}</b><span class="muted small">{% if total.no_cost %}без себестоимости у {{ total.no_cost|plural('товара', 'товаров', 'товаров') }}{% else %}по себестоимости{% endif %}</span></div>
+</section>
+<div class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Товар</th><th class="num">Продаж в день</th><th class="num">Остаток</th><th class="num">Хватит на</th>
+        <th class="num">Везти</th><th class="num">Сумма закупки</th></tr></thead>
+      <tbody>
+      {% for p in rows %}
+        <tr class="{{ '' if p.need else 'row-cancelled' }}">
+          <td class="with-thumb">{% if p.image %}<img class="thumb" src="{{ p.image }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% endif %}
+            <a class="one-line" href="/product?offer={{ p.offer_id|urlencode }}">{{ p.name }}</a><div class="muted small">{{ p.offer_id }}</div></td>
+          <td class="num">{{ p.per_day|num('dec') }}</td>
+          <td class="num">{{ p.stock|num('units') if p.stock is not none else '—' }}</td>
+          <td class="num {{ 'neg' if p.days_left is not none and p.days_left < days }}">{% if p.stock == 0 %}<span class="bad">нет в наличии</span>{% else %}{{ p.days_left|num('days') }}{% endif %}</td>
+          <td class="num"><b>{{ p.need|num('units') if p.need else '—' }}</b></td>
+          <td class="num">{% if p.need and not p.unit_cost %}<a class="warn-text" href="/costs">нет себест.</a>{% else %}{{ p.need_cost|num('rub') if p.need else '' }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">{{ icon('truck') }}<b>За последние 28 дней продаж не было</b><p>Считать не из чего: скорость продаж берётся из заказов последних 4 недель.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

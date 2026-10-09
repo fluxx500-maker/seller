@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Реклама · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block period %}{% with action="/ads", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Реклама</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · данные рекламного кабинета {{ mp.title }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/ads.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+{% if not configured %}
+<div class="notice warn"><span>Рекламный кабинет {{ mp.title }} не подключён. Добавьте ключи рекламы на странице <a href="/stores">«Магазины»</a> — статистика подтянется в фоне. Где взять ключ — в <a href="/help/{{ store.marketplace }}">справке</a>.</span></div>
+{% elif not coverage[0] %}
+<div class="notice warn">Статистика рекламы ещё загружается — загрузчик подтягивает её в фоне, загляните через пару минут.</div>
+{% elif since.isoformat() < coverage[0] %}
+<div class="notice warn">Статистика рекламы загружена только с {{ coverage[0] }}.</div>
+{% endif %}
+
+<section class="tiles" style="margin-bottom: 8px" data-tiles-page="ads" data-csrf="{{ csrf }}"{% if not ctx.can_edit %} data-readonly{% endif %}>
+  {% for t in summary %}
+  <article class="tile {{ t.kind }}{{ ' is-hidden' if t.hidden }}" data-key="{{ t.key }}">
+    <div class="tile-title">{{ t.title }}</div>
+    <div class="tile-value">{{ t.value|num(t.fmt) }}</div>
+  </article>
+  {% endfor %}
+</section>
+<details class="explain" style="margin: 0 0 16px"><summary>Чем отличаются два расхода</summary><p>«Реклама по начислениям» — всё, что {{ mp.title }} списал за продвижение, включая бонусы продавца, рассылки и звёздные товары; расход из рекламного кабинета — только кампании.</p></details>
+
+{% with title="Расход на рекламу по дням", series=series, svg=svg %}{% include "_chart.html" %}{% endwith %}
+
+<div class="card">
+  <h2>Кампании</h2>
+  {% if campaigns %}
+  <div class="table-wrap">
+    <table class="data sortable">
+      <thead><tr>
+        <th data-sort>Кампания</th><th data-sort>Тип</th><th data-sort>Статус</th><th class="num" data-sort>Расход</th>
+        <th class="num" data-sort>Показы</th><th class="num" data-sort>Клики</th><th class="num" data-sort>CTR</th>
+        <th class="num" data-sort>Цена клика</th><th class="num" data-sort>Заказы</th><th class="num" data-sort>Цена заказа</th><th class="num" data-sort>Сумма заказов</th><th class="num" data-sort>ДРР</th>
+        <th data-sort title="ДРР кампании меньше маржи её товаров до рекламы — окупается">Окупается</th>
+      </tr></thead>
+      <tbody>
+      {% for c in campaigns %}
+        <tr>
+          <td data-v=""><span class="one-line" title="{{ c.title }}">{{ c.title }}</span>{% if c.offers %}<div class="muted small">{{ c.offers[:4]|join(', ') }}{% if c.offers|length > 4 %} +{{ c.offers|length - 4 }}{% endif %}</div>{% endif %}</td>
+          <td data-v="">{{ c.type.split(' (')[0] }}</td>
+          <td data-v="">{% if c.state %}<span class="status {{ 'status-active' if 'апущ' in c.state or 'ктив' in c.state }}">{{ c.state }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="num" data-v="{{ c.spent }}">{{ c.spent|num }}</td>
+          <td class="num" data-v="{{ c.views }}">{{ c.views|num('units0') }}</td>
+          <td class="num" data-v="{{ c.clicks }}">{{ c.clicks|num('units0') }}</td>
+          <td class="num" data-v="{{ c.ctr or '' }}">{{ c.ctr|num('pct') }}</td>
+          <td class="num" data-v="{{ c.cpc or '' }}">{{ c.cpc|num }}</td>
+          <td class="num" data-v="{{ c.orders }}">{{ c.orders|num('units0') }}</td>
+          <td class="num" data-v="{{ c.cpo or '' }}">{{ c.cpo|num }}</td>
+          <td class="num" data-v="{{ c.orders_money }}">{{ c.orders_money|num }}</td>
+          <td class="num" data-v="{{ c.drr or '' }}">{{ c.drr|num('pct') }}</td>
+          <td data-v="{{ 1 if c.pays else 0 if c.pays is not none else '' }}" title="{% if c.margin_before_ads is not none %}Маржа товаров до рекламы {{ c.margin_before_ads|num('pct0') }}{% else %}Нет себестоимости товаров — сравнить не с чем{% endif %}">{% if c.pays %}<span class="good pays-mark" aria-label="окупается">✓ да</span>{% elif c.pays is not none %}<span class="bad pays-mark">✕ {{ 'нет заказов' if not c.orders else 'нет' }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<div class="empty">{{ icon('megaphone') }}<b>За этот период расходов на рекламу нет</b><p>Если кампании были — проверьте, что ключи рекламы подключены на странице «<a href="/stores">Магазины</a>».</p></div>{% endif %}
+</div>
+
+<div class="card">
+  <h2>По товарам</h2>
+  <p class="muted small">Расход кампании делится между товарами по отчёту {{ mp.title }} о расходе на каждый товар{% if store and store.marketplace == 'ozon' %}; в затраты — реально списанное (оплаченное рекламными бонусами не входит){% endif %}. Где такого отчёта нет — пропорционально проданным штукам, это оценка «≈». Реклама без товаров (продвижение в поиске, баннеры, бонусы продавца, рассылки) — расход на весь магазин{% if unassigned.get('group:ads') %}: {{ (-unassigned['group:ads'])|num }}{% endif %}.</p>
+  {% if products %}
+  <div class="table-wrap">
+    <table class="data sortable">
+      <thead><tr>
+        <th data-sort>Товар</th><th class="num" data-sort>Расход</th><th class="num" data-sort>Клики</th>
+        <th class="num" data-sort>Заказов из рекламы</th><th class="num" data-sort>Цена заказа</th><th class="num" data-sort>Реализация</th><th class="num" data-sort>ДРР</th><th class="num" data-sort title="Маржа товара до рекламы">Маржа до рекламы</th><th class="num" data-sort>Прибыль</th>
+      </tr></thead>
+      <tbody>
+      {% for p in products %}
+        <tr>
+          <td data-v=""><a class="one-line" title="{{ p.name }}" href="/product?offer={{ p.offer_id|urlencode }}&date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ p.name }}</a><div class="muted small">{{ p.offer_id }}</div></td>
+          <td class="num" data-v="{{ p.ads_spent }}">{{ p.ads_spent|num }}</td>
+          <td class="num" data-v="{{ p.ads_clicks }}">{{ p.ads_clicks|num('units0') }}</td>
+          <td class="num" data-v="{{ p.ads_orders }}">{{ p.ads_orders|num('units0') }}</td>
+          <td class="num" data-v="{{ p.cpo or '' }}">{{ p.cpo|num }}</td>
+          <td class="num" data-v="{{ p.get('sale_gross', 0) }}">{{ p.get('sale_gross', 0)|num }}</td>
+          <td class="num {{ 'neg' if p.pays == false }}" data-v="{{ p.drr or '' }}" {% if p.pays == false %}title="Реклама дороже маржи товара — продажи из рекламы в минус"{% endif %}>{{ p.drr|num('pct') }}</td>
+          <td class="num" data-v="{{ p.margin_before_ads if p.margin_before_ads is defined and p.margin_before_ads is not none else '' }}">{{ p.margin_before_ads|num('pct0') if p.margin_before_ads is defined else '—' }}</td>
+          <td class="num {{ 'neg' if p.profit < 0 }}" data-v="{{ p.profit }}">{{ p.profit|num }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="muted">Нет кампаний с товарами за период.</p>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

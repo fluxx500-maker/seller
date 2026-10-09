@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Себестоимость · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Себестоимость по товарам</h1>
+    <p class="subtitle">
+      Новая закупочная цена — укажите дату, с которой она действует: прошлые продажи останутся посчитанными по старой цене.
+      Всё в рублях за 1 шт.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/settings">{{ icon('file', 'ico-s') }}Загрузить из Excel</a>
+    <a class="button" href="/settings/costs.xlsx">{{ icon('download', 'ico-s') }}Скачать</a>
+  </div>
+</div>
+
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <div class="toolbar">
+    <input type="search" data-filter="#costs" placeholder="Поиск по названию или артикулу" aria-label="Поиск">
+    <select data-row-filter="#costs" aria-label="Показать товары">
+      <option value="active" selected>Продавались за год и без цены</option>
+      <option value="sold">Продавались за год</option>
+      <option value="nocost">Без себестоимости</option>
+      <option value="">Все товары</option>
+      <option value="history">С несколькими ценами</option>
+    </select>
+    {% set categories = rows|map(attribute='category')|select|unique|sort|list %}
+    {% if categories %}
+    <select data-attr-filter="category" aria-label="Категория товара">
+      <option value="">Все категории</option>
+      {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <select data-row-sort="#costs" aria-label="Порядок">
+      <option value="nocost" selected>Сначала без себестоимости</option>
+      <option value="sold">Больше продаж</option>
+      <option value="name">По названию</option>
+      <option value="cost">Дороже себестоимость</option>
+    </select>
+    <span class="muted small" data-filter-count></span>
+  </div>
+  <div class="table-wrap">
+    <table id="costs" class="data costs">
+      <thead><tr>
+        <th>Товар</th><th class="num">Продано за год</th><th class="num">Сейчас: себестоимость + фулфилмент</th>
+        <th>Новая цена с даты</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr id="o-{{ r.offer_id }}" data-tags="{{ 'nocost' if not r.current }} {{ 'sold' if r.sold > 0 }} {{ 'active' if r.sold > 0 or not r.current }} {{ 'history' if r.history|length > 1 }}"
+            data-sold="{{ r.sold }}" data-name="{{ (r.name or r.offer_id)|lower }}" data-cost="{{ (r.current.cost + r.current.fulfillment) if r.current else -1 }}"
+            data-nocost="{{ 1 if not r.current else 0 }}" data-category="{{ r.category }}">
+          <td>
+            <div>{{ r.name|truncate(70) if r.name else r.offer_id }}</div>
+            <div class="muted small"><code>{{ r.offer_id }}</code>{% if not r.current and r.sold > 0 %} · <span class="bad">продаётся без себестоимости</span>{% elif not r.current %} · <span class="bad">нет себестоимости</span>{% endif %}</div>
+            {% if r.history|length == 1 %}{% set h = r.history[0] %}
+            {# одна цена — без «Истории (1)», только возможность её удалить #}
+            <form method="post" action="/costs/delete" class="inline" data-question="Удалить цену {{ h.cost|num }} {{ 'без даты' if h.valid_from == no_date else 'с ' ~ h.valid_from }}?"
+                  onsubmit="return confirm(this.dataset.question)">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <input type="hidden" name="offer_id" value="{{ r.offer_id }}">
+              <input type="hidden" name="valid_from" value="{{ h.valid_from }}">
+              <button class="link small cost-del" type="submit" title="Удалить эту цену">удалить цену</button>
+            </form>
+            {% elif r.history %}
+            <details class="small">
+              <summary>История цен ({{ r.history|length }})</summary>
+              <table class="history">
+                {% for h in r.history|reverse %}
+                <tr>
+                  <td>{{ 'всегда' if h.valid_from == no_date else 'с ' ~ h.valid_from[8:] ~ '.' ~ h.valid_from[5:7] ~ '.' ~ h.valid_from[:4] }}</td>
+                  <td class="num">{{ h.cost|num }} + {{ h.fulfillment|num }}</td>
+                  <td>
+                    <form method="post" action="/costs/delete" data-question="Удалить цену {{ h.cost|num }} {{ 'без даты' if h.valid_from == no_date else 'с ' ~ h.valid_from }}?"
+                          onsubmit="return confirm(this.dataset.question)">
+                      <input type="hidden" name="csrf" value="{{ csrf }}">
+                      <input type="hidden" name="offer_id" value="{{ r.offer_id }}">
+                      <input type="hidden" name="valid_from" value="{{ h.valid_from }}">
+                      <button class="link danger" type="submit" title="Удалить эту цену" aria-label="Удалить эту цену">✕</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </table>
+            </details>
+            {% endif %}
+          </td>
+          <td class="num">{{ r.sold|num('units') if r.sold else '—' }}</td>
+          <td class="num">{% if r.current %}<b>{{ (r.current.cost + r.current.fulfillment)|num }}</b><div class="muted small">{{ r.current.cost|num }} + {{ r.current.fulfillment|num }}</div>{% else %}<span class="bad">не задана</span>{% endif %}</td>
+          <td>
+            <details class="cost-edit" {{ 'open' if not r.current and r.sold > 0 }}>
+              <summary>{{ 'Указать' if not r.current else 'Новая цена' }}</summary>
+              <form class="cost-form" method="post" action="/costs/set">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="offer_id" value="{{ r.offer_id }}">
+                <label>С даты
+                  <input type="date" name="valid_from" value="{{ today.isoformat() if r.current else '' }}"
+                         title="Пусто — цена действует всегда (для товара без истории)"></label>
+                <label>Себест., ₽
+                  <input name="cost" inputmode="decimal" required value="{{ '%g'|format(r.current.cost) if r.current else '' }}"></label>
+                <label>ФФ, ₽
+                  <input name="fulfillment" inputmode="decimal" value="{{ '%g'|format(r.current.fulfillment) if r.current else '' }}"></label>
+                <button type="submit" class="primary">Сохранить</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+      {% else %}
+        <tr data-tags="sold nocost history"><td colspan="4"><div class="empty">{{ icon('tag') }}<b>Товаров пока нет</b><p>Каталог появится после первой загрузки магазина.</p></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

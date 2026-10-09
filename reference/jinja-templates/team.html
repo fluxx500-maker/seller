@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Пользователи{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Пользователи и доступ</h1>
+    <p class="subtitle">Владелец решает, какие магазины видит каждый сотрудник — все или только выбранные. Администратор может менять себестоимость, расходы и налоги; «только просмотр» — только смотреть.</p>
+  </div>
+</div>
+
+{% if message %}<div class="notice ok">{{ message }}</div>{% endif %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if new_password %}
+<div class="notice ok"><span>
+  Доступ создан. Передайте сотруднику: почта <b>{{ new_password.email }}</b>, временный пароль <code>{{ new_password.password }}</code>.
+  Пароль показан один раз — сотрудник сменит его на этой же странице после входа.
+</span></div>
+{% endif %}
+
+<div class="section-title"><h2>Команда</h2></div>
+<div class="team-block">
+  <div class="card">
+    <h2>Кто имеет доступ</h2>
+    <div class="table-wrap">
+    <table class="data team-table">
+      <thead><tr><th>Почта</th><th>Роль</th><th>Магазины</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.email }}{{ ' (вы)' if u.id == ctx.user.id }}</td>
+        <td><span class="status">{{ roles[u.role] }}</span></td>
+        <td style="white-space: normal">
+          {% set allowed = u.allowed_store_ids() %}
+          {% if ctx.user.role == 'owner' and u.role != 'owner' and all_stores %}
+          <details class="small"><summary>{% if allowed is none %}все{% else %}{{ all_stores|selectattr('id', 'in', allowed)|map(attribute='name')|join(', ') or 'ни одного' }}{% endif %}</summary>
+            <form method="post" action="/team/{{ u.id }}/stores" class="store-access">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <label><input type="checkbox" name="every" value="1" {{ 'checked' if allowed is none }}> все, и новые тоже</label>
+              {% for st in all_stores %}
+              <label><input type="checkbox" name="store" value="{{ st.id }}" {{ 'checked' if allowed is not none and st.id in allowed }}> {{ st.name }}</label>
+              {% endfor %}
+              <button type="submit" class="sm">Сохранить</button>
+            </form>
+          </details>
+          {% elif allowed is none %}все{% else %}{{ all_stores|selectattr('id', 'in', allowed)|map(attribute='name')|join(', ') or 'ни одного' }}{% endif %}
+        </td>
+        <td class="num">
+          {% if ctx.user.role == 'owner' and u.id != ctx.user.id %}
+          <form method="post" action="/team/{{ u.id }}/delete" data-question="Закрыть доступ {{ u.email }}?" onsubmit="return confirm(this.dataset.question)">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="link danger-text" type="submit">Закрыть доступ</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if ctx.user.role == 'owner' %}
+    <hr>
+    <h2>Добавить сотрудника</h2>
+    <form method="post" action="/team/add" class="inline-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input name="email" type="email" placeholder="почта сотрудника" aria-label="Почта сотрудника" required style="flex: 1 1 220px">
+      <select name="role" aria-label="Роль"><option value="viewer">только просмотр</option><option value="admin">администратор</option></select>
+      <button class="primary" type="submit">Добавить</button>
+      {% if all_stores|length > 1 %}
+      <div class="store-access" style="flex-basis: 100%">
+        <input type="hidden" name="access_form" value="1">
+        <span class="small muted">Какие магазины видит:</span>
+        <label><input type="checkbox" name="every" value="1" checked> все, и новые тоже</label>
+        {% for st in all_stores %}<label><input type="checkbox" name="store" value="{{ st.id }}"> {{ st.name }}</label>{% endfor %}
+      </div>
+      {% endif %}
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section-title"><h2>Мой вход</h2></div>
+<div class="card"><p class="small" style="margin: 0">Пароль, Telegram и удаление аккаунта теперь в меню пользователя (правый верхний угол):
+  <a href="/profile">Профиль</a> · <a href="/notifications">Настройка уведомлений</a>.</p></div>
+
+<script>
+  // «все магазины» и отдельные галочки взаимоисключают друг друга
+  document.querySelectorAll(".store-access").forEach((box) => {
+    const every = box.querySelector('input[name="every"]');
+    const one = box.querySelectorAll('input[name="store"]');
+    every.addEventListener("change", () => { if (every.checked) one.forEach((x) => { x.checked = false; }); });
+    one.forEach((x) => x.addEventListener("change", () => { if (x.checked) every.checked = false; }));
+  });
+</script>
+{% endblock %}

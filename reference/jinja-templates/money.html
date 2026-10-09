@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Деньги · {{ store.name }} {{ mp.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Деньги у площадки</h1>
+    <p class="subtitle">Сколько {{ mp.title }} начислил за продажи, сколько перечислил вам на счёт и сколько осталось на балансе</p>
+  </div>
+</div>
+
+{% if not m.rows %}
+<div class="card"><div class="empty">{{ icon('wallet') }}<b>Данные о выплатах ещё загружаются</b>
+  <p>Обычно это занимает несколько минут после подключения магазина. Ход загрузки видно на странице «<a href="/stores">Магазины</a>».</p></div></div>
+{% else %}
+<section class="hero">
+  <article class="hero-card hero-profit">
+    <div class="hero-label">На балансе у {{ mp.title }}</div>
+    <div class="hero-value">{{ m.balance|num('rub') }}</div>
+    <div class="hero-meta">на конец последнего периода выплат — придёт следующими выплатами</div>
+  </article>
+  <article class="hero-card">
+    <div class="hero-label">Перечислено за год</div>
+    <div class="hero-value">{{ m.paid_12m|num('rub') }}</div>
+    <div class="hero-meta">на ваш расчётный счёт <button type="button" class="hint" data-hint="Площадка перечисляет деньги по графику выплат: часть начисленного за период придёт позже, часть перечисленного — за прошлые периоды; остаток на балансе — ниже." aria-label="Почему перечислено не равно начисленному">?</button></div>
+  </article>
+  <article class="hero-card">
+    <div class="hero-label">Начислено за год</div>
+    <div class="hero-value">{{ m.accrued_12m|num('rub') }}</div>
+    <div class="hero-meta">продажи минус возвраты, комиссия и услуги (как в P&amp;L)</div>
+  </article>
+</section>
+
+<div class="card">
+  <h2>По месяцам</h2>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Месяц</th><th class="num">Продажи</th><th class="num">Возвраты</th>
+        <th class="num">Начислено</th><th class="num">Перечислено <button type="button" class="hint" data-hint="Площадка перечисляет деньги по графику выплат: часть начисленного за период придёт позже, часть перечисленного — за прошлые периоды; остаток на балансе — ниже." aria-label="Почему перечислено не равно начисленному">?</button></th></tr></thead>
+      <tbody>
+      {% for r in m.months %}
+        <tr><td>{{ months_ru[r.month.month] }} {{ r.month.year }}</td>
+          <td class="num">{{ r.sales|num }}</td><td class="num">{{ r.returns|num }}</td>
+          <td class="num"><b>{{ r.accrued|num }}</b></td><td class="num"><b>{{ r.paid_out|num if r.paid_out else '—' }}</b></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small" style="margin: 14px 0 0">«Продажи» — реализация по цене продавца, «Начислено» — продажи минус возвраты, комиссия и все услуги {{ mp.title }}
+    (как в P&amp;L). «Перечислено» — деньги, реально отправленные на ваш счёт в этом месяце, в том числе за продажи прошлых месяцев,
+    поэтому эти цифры не обязаны совпадать.</p>
+</div>
+
+<details class="card">
+  <summary>По периодам выплат ({{ m.rows|length }})</summary>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Период</th><th class="num">Баланс на начало</th><th class="num">Перечислено</th><th class="num">Баланс на конец</th></tr></thead>
+      <tbody>
+      {% for r in m.rows %}
+        <tr><td>{{ r.begin.strftime('%d.%m') }} – {{ r.end.strftime('%d.%m.%Y') }}</td><td class="num">{{ r.begin_balance|num }}</td>
+          <td class="num">{{ r.paid_out|num if r.paid_out else '—' }}</td><td class="num">{{ r.end_balance|num }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endif %}
+{% endblock %}

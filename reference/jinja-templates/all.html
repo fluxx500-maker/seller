@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Общая сводка{% endblock %}
+{% block period %}{% with action="/all", extra_params={} %}{% include "_period.html" %}{% endwith %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Общая сводка</h1>
+    <p class="subtitle">{{ since.strftime('%d.%m.%Y') }} – {{ until.strftime('%d.%m.%Y') }} · {{ rows|length }} маг. на всех площадках · цифры каждого магазина — как на его сводке</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="/all.xlsx?date_from={{ since.isoformat() }}&date_to={{ until.isoformat() }}">{{ icon('download', 'ico-s') }}Скачать Excel</a>
+  </div>
+</div>
+
+{% if groups|length > 1 %}
+<div class="mp-totals">
+  {% for g in groups %}
+  {% if g.store_id %}<a class="card mp-total mp-total-link" href="/summary/{{ g.store_id }}" title="Открыть сводку магазина">{% else %}<div class="card mp-total">{% endif %}
+    <div class="small muted"><span class="mp-badge mp-{{ g.mp.code }}">{{ g.mp.short }}</span> {{ g.mp.title }} · {{ g.stores }} маг.{% if g.store_id %} <span class="mp-total-go">→</span>{% endif %}</div>
+    {% if not g.profit and not g.realization %}
+    <div class="big muted">нет данных</div>
+    <div class="small muted">за этот период у площадки нет продаж и начислений</div>
+    {% else %}
+    <div class="big">{{ g.profit|num('rub') }}</div>
+    <div class="small muted">прибыль · реализация {{ g.realization|num('rub') }}{% if g.margin is not none %} · маржа {{ g.margin|num('pct') }}{% endif %}</div>
+    {% endif %}
+  {% if g.store_id %}</a>{% else %}</div>{% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-wrap">
+  <table class="data sortable all-table">
+    <thead><tr><th data-sort>Магазин</th>{% for key, title, fmt in columns %}<th class="num" data-sort>{{ title }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td data-v="">
+          <a class="store-link" href="/summary/{{ r.store.id }}" title="Открыть сводку магазина"><span class="mp-badge mp-{{ r.mp.code }}">{{ r.mp.short }}</span><span class="store-link-name">{{ r.store.name }}</span></a>
+          {% if r.error %}<div class="small bad">{{ r.error }}</div>{% endif %}
+        </td>
+        {% if r.empty %}
+        <td class="muted empty-row" colspan="{{ columns|length }}">нет данных за период</td>
+        {% else %}
+        {% for key, title, fmt in columns %}
+        <td class="num" data-v="{{ r[key] if r[key] is not none else '' }}">{% if key == 'orders_amount' and r.approx %}≈ {% endif %}{{ r[key]|num(fmt) if r[key] is not none else '—' }}</td>
+        {% endfor %}
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+    {% if rows|length > 1 %}
+    <tfoot>
+      {# «Итого площадки» — только если на ней больше одного магазина и площадок несколько, иначе строка повторяет магазин или общий итог #}
+      {% for g in groups if groups|length > 1 and g.stores > 1 %}
+      <tr class="muted"><td>Итого {{ g.mp.title }}</td>{% for key, title, fmt in columns %}<td class="num">{% if key == 'orders_amount' and g.approx %}≈ {% endif %}{{ g[key]|num(fmt) if g[key] is not none else '—' }}</td>{% endfor %}</tr>
+      {% endfor %}
+      <tr><td><b>Итого</b></td>{% for key, title, fmt in columns %}<td class="num"><b>{% if key == 'orders_amount' and total.approx %}≈ {% endif %}{{ total[key]|num(fmt) if total[key] is not none else '—' }}</b></td>{% endfor %}</tr>
+    </tfoot>
+    {% endif %}
+  </table>
+  </div>
+  <p class="muted small">«≈» — часть заказов оценена: площадка ещё не сообщила, сколько заплатил покупатель. «Начислено площадкой» — у Ozon начисления, у WB — к перечислению по отчётам о реализации.</p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/table.js?v=13"></script>{% endblock %}

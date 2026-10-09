@@ -1,0 +1,35 @@
+{% extends "_help_base.html" %}
+{% block help_title %}Справка{% endblock %}
+{% block doc %}
+<h1>Справка seller.bz</h1>
+<p class="lead">Как подключить магазин и что означают цифры в отчётах. Сервис работает только с ключами «только чтение»:
+  по ним нельзя ничего изменить в вашем кабинете.</p>
+
+<h2>Как получить ключ</h2>
+<div class="help-cards">
+  {% for m in all_marketplaces() %}
+  <a class="help-card" href="/help/{{ m.code }}">
+    <span class="mp-badge lg mp-{{ m.code }}">{{ m.short }}</span>
+    <h3>{{ m.title }}{% if not m.ready %} <span class="soon-tag">скоро</span>{% endif %}</h3>
+    <p>{% if m.code == 'ozon' %}Ключ Seller API с ролью «Admin read only» и, по желанию, ключ рекламы Performance API.
+      {% elif m.code == 'wb' %}Базовый токен с уровнем доступа «Только чтение» и нужными категориями.
+      {% else %}Токен авторизации Api-Key с доступом «Просмотр всех данных» и Campaign ID.{% endif %}</p>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Отчёты</h2>
+<div class="help-cards">
+  <a class="help-card" href="/help/metrics">
+    <span class="lp-ico">{{ icon('chart') }}</span>
+    <h3>Что значит каждая цифра</h3>
+    <p>Прибыль, маржа, ROI, ДРР, соинвест и СПП, начислено, ABC, «закончится к», упущенная выручка и оценка «≈».</p>
+  </a>
+</div>
+
+<div class="help-box">
+  <b>Почему нужен ключ «только чтение»</b>
+  <p>Так вы точно знаете, что сервис не поменяет цены, карточки, остатки или рекламу. Отключить доступ можно в любой момент —
+    удалите ключ в кабинете площадки.</p>
+</div>
+{% endblock %}

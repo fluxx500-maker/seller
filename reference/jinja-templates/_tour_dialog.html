@@ -1,0 +1,8 @@
+{# Окно с видео-знакомством. Открывается кнопками data-tour-open (app.js); без JS ссылка ведёт на страницу /tour. #}
+<dialog class="tour-dialog" aria-label="Видео-знакомство с seller.bz">
+  <button type="button" class="tour-close" data-tour-close aria-label="Закрыть">{{ icon('close') }}</button>
+  <video controls playsinline preload="none" poster="/static/tour.jpg?v=3">
+    <source src="/static/tour.mp4?v=3" type="video/mp4">
+  </video>
+  <p class="tour-caption">Минутный обзор: подключение, сводка, прибыль заказов и товаров, реклама, остатки, P&amp;L и Telegram-бот. Цифры условные.</p>
+</dialog>
