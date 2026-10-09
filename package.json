@@ -1,0 +1,9 @@
+{
+  "name": "seller-bz-design-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "seller.bz visual design prototype; no Python, database, API keys or external dependencies",
+  "scripts": {"dev": "node server.mjs", "start": "node server.mjs", "build": "node --check server.mjs", "test": "node smoke-test.mjs"},
+  "engines": {"node": ">=20"}
+}
